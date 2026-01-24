@@ -21,7 +21,13 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     public IActionResult Login([FromBody] LoginRequest request)
     {
+        Console.WriteLine($"Login attempt: {request.Username}, password length: {request.Password?.Length}");
         var user = _context.Users.FirstOrDefault(u => u.Username == request.Username);
+        Console.WriteLine($"Login attempt: {request.Username}, user found: {user != null}");
+        if (user != null)
+        {
+            Console.WriteLine($"Password verify: {BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash)}");
+        }
         if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
             return Unauthorized();
 

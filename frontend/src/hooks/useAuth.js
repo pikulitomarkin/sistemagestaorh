@@ -23,12 +23,13 @@ export const useAuth = () => {
   const login = async (username, password) => {
     try {
       const res = await api.post('/auth/login', { username, password });
+      console.log('Login response:', res.data);
       localStorage.setItem('token', res.data.Token);
       // const decoded = jwtDecode(res.data.Token);
       // setUser({ role: decoded.role, username: decoded.unique_name });
       setUser({ role: res.data.Role, username: username }); // Temporário
     } catch (error) {
-      console.error('Login failed', error);
+      console.log('Login error:', error);
     }
   };
 

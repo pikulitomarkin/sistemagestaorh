@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using BCrypt.Net;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -56,5 +57,23 @@ app.UseCors("AllowSpecificOrigins");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+
+// Seed database with test user
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    context.Database.EnsureCreated();
+    if (!context.Users.Any(u => u.Username == "rh_test"))
+    {
+        var hashedPassword = BCrypt.Net.BCrypt.HashPassword("123");
+        context.Users.Add(new User
+        {
+            Username = "rh_test",
+            PasswordHash = hashedPassword,
+            Role = "RH"
+        });
+        context.SaveChanges();
+    }
+}
 
 app.Run();
