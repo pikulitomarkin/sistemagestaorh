@@ -1,0 +1,10 @@
+{
+    "files.autoSave": "onWindowChange",
+    "editor.wordWrap": "on",
+    "editor.codeActions.triggerOnFocusChange": true,
+    "builder.serverUrl": "http://localhost:5173",
+    "builder.command": "npm run dev\n",
+    "builder.runDevServer": false,
+    "builder.autoDetectDevServer": true,
+    "builder.launchType": "desktop"
+}
