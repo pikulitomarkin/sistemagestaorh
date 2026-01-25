@@ -94,7 +94,7 @@ export function LoginPage() {
                 type="submit"
                 variant="primary"
                 size="lg"
-                className="w-full"
+                className="w-full mt-6"
                 loading={isLoading}
               >
                 <LogIn className="h-5 w-5 mr-2" />
@@ -120,13 +120,15 @@ export function LoginPage() {
         </p>
       </div>
 
-      {/* Floating Entrar button for quick access */}
+      {/* Floating Entrar button for mobile - only visible on mobile devices */}
       <button
-        className="fixed bottom-6 right-6 bg-primary-600 text-white p-4 rounded-full shadow-lg hover:bg-primary-700 focus:outline-none"
+        type="button"
+        className="md:hidden fixed bottom-6 right-6 bg-primary-600 text-white px-6 py-3 rounded-full shadow-2xl hover:bg-primary-700 focus:outline-none focus:ring-4 focus:ring-primary-300 flex items-center gap-2 font-semibold z-50"
         onClick={submitForm}
-        aria-label="Entrar"
+        aria-label="Entrar no Sistema"
       >
         <LogIn className="w-5 h-5" />
+        <span>Login</span>
       </button>
     </div>
   );

@@ -110,51 +110,59 @@ export function AttendancePage() {
   return (
     <div className="space-y-6">
       {/* Dropdown de Funcionários Ativos */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="w-full max-w-md">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Selecionar Funcionário</label>
-          <Input
-            placeholder="Buscar funcionário..."
-            className="mb-2"
-            value={employeeSearch}
-            onChange={e => setEmployeeSearch(e.target.value)}
-          />
-          <Select
-            value={selectedEmployeeId}
-            onChange={e => setSelectedEmployeeId(e.target.value)}
-          >
-            <option value="">Todos os funcionários</option>
-            {employees
-              .filter(emp =>
-                emp.name.toLowerCase().includes(employeeSearch.toLowerCase())
-              )
-              .map(emp => (
-                <option key={emp.id} value={emp.id}>
-                  {emp.name} - {emp.department}
-                </option>
-              ))}
-          </Select>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            variant="primary"
-            size="md"
-            onClick={() => setShowAddModal(true)}
-            disabled={!selectedEmployeeId}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Lançar Frequência Individual
-          </Button>
-          <Button
-            variant="outline"
-            size="md"
-            onClick={() => setShowBatchModal(true)}
-          >
-            <Upload className="h-4 w-4 mr-2" />
-            Lançamento em Lote
-          </Button>
-        </div>
-      </div>
+      <Card>
+        <CardContent className="p-6">
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Selecionar Funcionário</label>
+              <Input
+                placeholder="Buscar funcionário..."
+                className="mb-2"
+                value={employeeSearch}
+                onChange={e => setEmployeeSearch(e.target.value)}
+              />
+              <Select
+                value={selectedEmployeeId}
+                onChange={e => setSelectedEmployeeId(e.target.value)}
+                className="w-full"
+              >
+                <option value="">Todos os funcionários</option>
+                {employees
+                  .filter(emp =>
+                    emp.name.toLowerCase().includes(employeeSearch.toLowerCase())
+                  )
+                  .map(emp => (
+                    <option key={emp.id} value={emp.id}>
+                      {emp.name} - {emp.department}
+                    </option>
+                  ))}
+              </Select>
+            </div>
+            
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button
+                variant="primary"
+                size="lg"
+                onClick={() => setShowAddModal(true)}
+                disabled={!selectedEmployeeId}
+                className="w-full sm:w-auto"
+              >
+                <Plus className="h-5 w-5 mr-2" />
+                Lançar Frequência Individual
+              </Button>
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={() => setShowBatchModal(true)}
+                className="w-full sm:w-auto"
+              >
+                <Upload className="h-5 w-5 mr-2" />
+                Lançamento em Lote
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
