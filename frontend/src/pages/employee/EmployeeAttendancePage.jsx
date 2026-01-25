@@ -205,6 +205,63 @@ export function EmployeeAttendancePage() {
       </Card>
 
 
+
+      {/* Register Modal com calendário e hora de entrada/saída */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4">
+            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+              <h2 className="text-xl font-semibold text-gray-900">Registrar Frequência</h2>
+              <button onClick={handleCloseModal} className="text-gray-400 hover:text-gray-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Selecione o dia do mês</label>
+              <MonthCalendar value={selectedDate} onChange={handleDaySelect} />
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 mt-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <Input
+                    type="time"
+                    label="Hora de Entrada"
+                    {...register('entryTime')}
+                  />
+                  <Input
+                    type="time"
+                    label="Hora de Saída"
+                    {...register('exitTime')}
+                  />
+                </div>
+                <Select label="Presença" {...register('isAbsent')}>
+                  <option value={false}>Presente</option>
+                  <option value={true}>Falta</option>
+                </Select>
+                <Input
+                  type="number"
+                  label="Horas Extras"
+                  step="0.5"
+                  {...register('overtimeHours', { valueAsNumber: true })}
+                />
+                <Input
+                  type="number"
+                  label="Horas Extras 100%"
+                  step="0.5"
+                  {...register('doubleTimeHours', { valueAsNumber: true })}
+                />
+                <Input label="Observações" {...register('notes')} />
+                <div className="flex justify-end gap-3 pt-4">
+                  <Button type="button" variant="outline" onClick={handleCloseModal}>
+                    Cancelar
+                  </Button>
+                  <Button type="submit" variant="primary" loading={registerMutation.isPending}>
+                    Registrar
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
