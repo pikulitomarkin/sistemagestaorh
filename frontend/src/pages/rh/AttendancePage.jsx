@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { MonthCalendar } from '../../components/ui/MonthCalendar';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -404,10 +405,14 @@ export function AttendancePage() {
 
 // Single Attendance Modal Component
 function AttendanceModal({ employees, onClose, onSubmit, isLoading }) {
+  const [selectedDate, setSelectedDate] = React.useState(new Date());
   const { register, handleSubmit, setValue, formState: { errors } } = useForm({
     resolver: zodResolver(attendanceSchema),
     defaultValues: {
       employeeId: employees.find(e => e.id === (typeof selectedEmployeeId !== 'undefined' ? selectedEmployeeId : ''))?.id || '',
+      date: new Date().toISOString().split('T')[0],
+      entryTime: '',
+      exitTime: '',
       hoursWorked: 8,
       overtimeHours50: 0,
       overtimeHours100: 0,
@@ -422,14 +427,19 @@ function AttendanceModal({ employees, onClose, onSubmit, isLoading }) {
     }
   }, [selectedEmployeeId, employees, setValue]);
 
+  // Atualiza o campo date ao selecionar no calendário
+  const handleDaySelect = (date) => {
+    setSelectedDate(date);
+    setValue('date', date.toISOString().split('T')[0]);
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
       <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="px-6 py-4 border-b border-gray-200">
           <h2 className="text-xl font-semibold text-gray-900">Novo Registro de Frequência</h2>
         </div>
-        
-        <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4">
+        <div className="p-6">
           <Select
             label="Funcionário *"
             {...register('employeeId')}
@@ -442,73 +452,76 @@ function AttendanceModal({ employees, onClose, onSubmit, isLoading }) {
               </option>
             ))}
           </Select>
-
-          <Input
-            type="date"
-            label="Data *"
-            {...register('date')}
-            error={errors.date?.message}
-          />
-
-          <div className="grid grid-cols-2 gap-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2 mt-4">Selecione o dia do mês</label>
+          <MonthCalendar value={selectedDate} onChange={handleDaySelect} />
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 mt-4">
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                type="time"
+                label="Hora de Entrada"
+                {...register('entryTime')}
+              />
+              <Input
+                type="time"
+                label="Hora de Saída"
+                {...register('exitTime')}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                type="number"
+                label="Horas Trabalhadas"
+                step="0.5"
+                {...register('hoursWorked', { valueAsNumber: true })}
+                error={errors.hoursWorked?.message}
+              />
+              <Input
+                type="number"
+                label="Faltas (dias)"
+                step="0.5"
+                {...register('absences', { valueAsNumber: true })}
+                error={errors.absences?.message}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                type="number"
+                label="Horas Extras 50%"
+                step="0.5"
+                {...register('overtimeHours50', { valueAsNumber: true })}
+                error={errors.overtimeHours50?.message}
+              />
+              <Input
+                type="number"
+                label="Horas Extras 100%"
+                step="0.5"
+                {...register('overtimeHours100', { valueAsNumber: true })}
+                error={errors.overtimeHours100?.message}
+              />
+            </div>
             <Input
-              type="number"
-              label="Horas Trabalhadas"
-              step="0.5"
-              {...register('hoursWorked', { valueAsNumber: true })}
-              error={errors.hoursWorked?.message}
+              label="Observações"
+              {...register('notes')}
             />
-
-            <Input
-              type="number"
-              label="Faltas (dias)"
-              step="0.5"
-              {...register('absences', { valueAsNumber: true })}
-              error={errors.absences?.message}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              type="number"
-              label="Horas Extras 50%"
-              step="0.5"
-              {...register('overtimeHours50', { valueAsNumber: true })}
-              error={errors.overtimeHours50?.message}
-            />
-
-            <Input
-              type="number"
-              label="Horas Extras 100%"
-              step="0.5"
-              {...register('overtimeHours100', { valueAsNumber: true })}
-              error={errors.overtimeHours100?.message}
-            />
-          </div>
-
-          <Input
-            label="Observações"
-            {...register('notes')}
-          />
-
-          <div className="flex justify-end gap-3 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              disabled={isLoading}
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              variant="primary"
-              loading={isLoading}
-            >
-              Registrar
-            </Button>
-          </div>
-        </form>
+            <div className="flex justify-end gap-3 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                disabled={isLoading}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                variant="primary"
+                loading={isLoading}
+              >
+                Registrar
+              </Button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );

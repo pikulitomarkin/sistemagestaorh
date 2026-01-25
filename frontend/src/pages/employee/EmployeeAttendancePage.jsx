@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { MonthCalendar } from '../../components/ui/MonthCalendar';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { attendanceService } from '../../services/api';
@@ -19,18 +20,27 @@ export function EmployeeAttendancePage() {
   const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear());
   const [showModal, setShowModal] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const { showToast } = useToast();
   const queryClient = useQueryClient();
 
-  const { register, handleSubmit, reset } = useForm({
+  const { register, handleSubmit, setValue, reset } = useForm({
     defaultValues: {
       date: new Date().toISOString().split('T')[0],
+      entryTime: '',
+      exitTime: '',
       isAbsent: false,
       overtimeHours: 0,
       doubleTimeHours: 0,
       notes: '',
     },
   });
+
+  // Atualiza o campo date ao selecionar no calendário
+  const handleDaySelect = (date) => {
+    setSelectedDate(date);
+    setValue('date', date.toISOString().split('T')[0]);
+  };
 
   // Fetch my attendance
   const { data: attendances = [], isLoading } = useQuery({
@@ -69,6 +79,8 @@ export function EmployeeAttendancePage() {
       isAbsent: data.isAbsent === 'true',
       overtimeHours: Number(data.overtimeHours),
       doubleTimeHours: Number(data.doubleTimeHours),
+      entryTime: data.entryTime,
+      exitTime: data.exitTime,
     });
   };
 
@@ -85,50 +97,61 @@ export function EmployeeAttendancePage() {
     { label: 'Horas Extras', value: `${totalOvertime.toFixed(1)}h`, color: 'text-orange-600 bg-orange-50' },
   ];
 
-  const months = [
-    { value: 1, label: 'Janeiro' }, { value: 2, label: 'Fevereiro' }, { value: 3, label: 'Março' },
-    { value: 4, label: 'Abril' }, { value: 5, label: 'Maio' }, { value: 6, label: 'Junho' },
-    { value: 7, label: 'Julho' }, { value: 8, label: 'Agosto' }, { value: 9, label: 'Setembro' },
-    { value: 10, label: 'Outubro' }, { value: 11, label: 'Novembro' }, { value: 12, label: 'Dezembro' },
-  ];
-
-  const years = Array.from({ length: 3 }, (_, i) => currentDate.getFullYear() - 1 + i);
-
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Minha Frequência</h1>
-          <p className="text-gray-600 mt-1">Registre seu ponto e acompanhe sua frequência</p>
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4">
+            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+              <h2 className="text-xl font-semibold text-gray-900">Registrar Frequência</h2>
+              <button onClick={handleCloseModal} className="text-gray-400 hover:text-gray-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Selecione o dia do mês</label>
+              <MonthCalendar value={selectedDate} onChange={handleDaySelect} />
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 mt-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <Input
+                    type="time"
+                    label="Hora de Entrada"
+                    {...register('entryTime')}
+                  />
+                  <Input
+                    type="time"
+                    label="Hora de Saída"
+                    {...register('exitTime')}
+                  />
+                </div>
+                <Select label="Presença" {...register('isAbsent')}>
+                  <option value={false}>Presente</option>
+                  <option value={true}>Falta</option>
+                </Select>
+                <Input
+                  type="number"
+                  label="Horas Extras"
+                  step="0.5"
+                  {...register('overtimeHours', { valueAsNumber: true })}
+                />
+                <Input
+                  type="number"
+                  label="Horas Extras 100%"
+                  step="0.5"
+                  {...register('doubleTimeHours', { valueAsNumber: true })}
+                />
+                <Input label="Observações" {...register('notes')} />
+                <div className="flex justify-end gap-3 pt-4">
+                  <Button type="button" variant="outline" onClick={handleCloseModal}>
+                    Cancelar
+                  </Button>
+                  <Button type="submit" variant="primary" loading={registerMutation.isPending}>
+                    Registrar
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </div>
         </div>
-        <Button onClick={() => setShowModal(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          Registrar Ponto
-        </Button>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat) => (
-          <Card key={stat.label}>
-            <CardContent className="pt-6">
-              <div className={`inline-flex p-3 rounded-lg ${stat.color} mb-2`}>
-                <Clock className="w-6 h-6" />
-              </div>
-              <p className="text-sm text-gray-600">{stat.label}</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">{stat.value}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* Filters */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Select value={selectedMonth} onChange={(e) => setSelectedMonth(Number(e.target.value))}>
-              {months.map(month => (
+      )}
                 <option key={month.value} value={month.value}>{month.label}</option>
               ))}
             </Select>
