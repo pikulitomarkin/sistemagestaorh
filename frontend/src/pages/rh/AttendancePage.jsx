@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { MonthCalendar } from '../../components/ui/MonthCalendar';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
@@ -162,25 +162,6 @@ export function AttendancePage() {
           <p className="mt-1 text-sm text-gray-600">
             Controle de ponto e lançamento de horas
           </p>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="md"
-            onClick={() => setShowBatchModal(true)}
-          >
-            <Upload className="h-4 w-4 mr-2" />
-            Lançamento em Lote
-          </Button>
-          <Button
-            variant="primary"
-            size="md"
-            onClick={() => setShowAddModal(true)}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Novo Registro
-          </Button>
         </div>
       </div>
 
@@ -404,12 +385,12 @@ export function AttendancePage() {
 }
 
 // Single Attendance Modal Component
-function AttendanceModal({ employees, onClose, onSubmit, isLoading }) {
+function AttendanceModal({ employees, selectedEmployeeId, onClose, onSubmit, isLoading }) {
   const [selectedDate, setSelectedDate] = React.useState(new Date());
   const { register, handleSubmit, setValue, formState: { errors } } = useForm({
     resolver: zodResolver(attendanceSchema),
     defaultValues: {
-      employeeId: employees.find(e => e.id === (typeof selectedEmployeeId !== 'undefined' ? selectedEmployeeId : ''))?.id || '',
+      employeeId: selectedEmployeeId || '',
       date: new Date().toISOString().split('T')[0],
       entryTime: '',
       exitTime: '',
@@ -422,10 +403,10 @@ function AttendanceModal({ employees, onClose, onSubmit, isLoading }) {
 
   // Preenche o funcionário selecionado ao abrir o modal
   React.useEffect(() => {
-    if (employees && employees.length && selectedEmployeeId) {
+    if (selectedEmployeeId) {
       setValue('employeeId', selectedEmployeeId);
     }
-  }, [selectedEmployeeId, employees, setValue]);
+  }, [selectedEmployeeId, setValue]);
 
   // Atualiza o campo date ao selecionar no calendário
   const handleDaySelect = (date) => {
