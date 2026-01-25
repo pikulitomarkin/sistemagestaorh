@@ -152,7 +152,6 @@ export function EmployeeAttendancePage() {
           </div>
         </div>
       )}
-              {/* Corrigido: Removido parêntese extra do map dos meses */}
             </Select>
             <Select value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))}>
               {years.map(year => (
