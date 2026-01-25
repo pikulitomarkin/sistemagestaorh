@@ -24,6 +24,8 @@ export function EmployeeDashboard() {
     defaultValues: {
       date: new Date().toISOString().split('T')[0],
       isAbsent: 'false',
+      entryTime: '',
+      exitTime: '',
       overtimeHours: 0,
       doubleTimeHours: 0,
       notes: '',
@@ -86,6 +88,8 @@ export function EmployeeDashboard() {
       reset({
         date: new Date().toISOString().split('T')[0],
         isAbsent: 'false',
+        entryTime: '',
+        exitTime: '',
         overtimeHours: 0,
         doubleTimeHours: 0,
         notes: '',
@@ -100,6 +104,8 @@ export function EmployeeDashboard() {
     registerMutation.mutate({
       ...data,
       isAbsent: data.isAbsent === 'true',
+      entryTime: data.entryTime || null,
+      exitTime: data.exitTime || null,
       overtimeHours: Number(data.overtimeHours),
       doubleTimeHours: Number(data.doubleTimeHours),
     });
@@ -177,7 +183,7 @@ export function EmployeeDashboard() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Data</label>
                 <Input type="date" {...register('date')} />
@@ -192,6 +198,16 @@ export function EmployeeDashboard() {
               </div>
 
               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Hora de Entrada</label>
+                <Input type="time" {...register('entryTime')} />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Hora de Saída</label>
+                <Input type="time" {...register('exitTime')} />
+              </div>
+
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">HE 50%</label>
                 <Input type="number" step="0.5" {...register('overtimeHours')} placeholder="0" />
               </div>
@@ -200,21 +216,23 @@ export function EmployeeDashboard() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">HE 100%</label>
                 <Input type="number" step="0.5" {...register('doubleTimeHours')} placeholder="0" />
               </div>
-
-              <div className="flex items-end">
-                <Button 
-                  type="submit" 
-                  className="w-full" 
-                  disabled={registerMutation.isPending}
-                >
-                  {registerMutation.isPending ? 'Registrando...' : 'Registrar'}
-                </Button>
-              </div>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Observações (opcional)</label>
               <Input {...register('notes')} placeholder="Ex: Home office, visita cliente..." />
+            </div>
+
+            <div className="flex justify-end pt-4 border-t border-blue-200">
+              <Button 
+                type="submit" 
+                size="lg"
+                disabled={registerMutation.isPending}
+                className="w-full sm:w-auto bg-blue-700 hover:bg-blue-800 text-white font-semibold px-8 py-3 text-base shadow-lg"
+              >
+                <CheckCircle className="w-5 h-5 mr-2" />
+                {registerMutation.isPending ? 'Registrando...' : 'Salvar Lançamento'}
+              </Button>
             </div>
           </form>
         </CardContent>
