@@ -1,12 +1,13 @@
+
 # Build stage
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
-WORKDIR /app
-
-# Copy published app from build container
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
 COPY . .
+RUN dotnet publish HRManagementAPI.csproj -c Release -o /app/publish
 
-# Expose port (ajuste se necessário)
+# Runtime stage
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
+WORKDIR /app
+COPY --from=build /app/publish .
 EXPOSE 8080
-
-# Start app
 ENTRYPOINT ["dotnet", "HRManagementAPI.dll"]
