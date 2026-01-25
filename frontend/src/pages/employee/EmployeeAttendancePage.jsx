@@ -152,15 +152,7 @@ export function EmployeeAttendancePage() {
           </div>
         </div>
       )}
-            </Select>
-            <Select value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))}>
-              {years.map(year => (
-                <option key={year} value={year}>{year}</option>
-              ))}
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+
 
       {/* Attendance Table */}
       <Card>
