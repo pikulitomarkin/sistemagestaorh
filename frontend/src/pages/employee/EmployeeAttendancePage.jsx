@@ -204,59 +204,7 @@ export function EmployeeAttendancePage() {
         </CardContent>
       </Card>
 
-      {/* Register Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-md">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Registrar Ponto</CardTitle>
-              <button onClick={handleCloseModal} className="text-gray-500 hover:text-gray-700">
-                <X className="w-5 h-5" />
-              </button>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Data *</label>
-                  <Input type="date" {...register('date')} />
-                </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Status *</label>
-                  <Select {...register('isAbsent')}>
-                    <option value="false">Presente</option>
-                    <option value="true">Ausente</option>
-                  </Select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Horas Extras 50%</label>
-                  <Input type="number" step="0.5" {...register('overtimeHours')} />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Horas Extras 100%</label>
-                  <Input type="number" step="0.5" {...register('doubleTimeHours')} />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Observações</label>
-                  <Input {...register('notes')} placeholder="Opcional" />
-                </div>
-
-                <div className="flex justify-end gap-3 pt-4">
-                  <Button type="button" variant="outline" onClick={handleCloseModal}>
-                    Cancelar
-                  </Button>
-                  <Button type="submit" disabled={registerMutation.isPending}>
-                    {registerMutation.isPending ? 'Registrando...' : 'Registrar'}
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
-      )}
     </div>
   );
 }
