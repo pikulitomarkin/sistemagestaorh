@@ -42,6 +42,8 @@ export function AttendancePage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showBatchModal, setShowBatchModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState('');
+  const [employeeSearch, setEmployeeSearch] = useState('');
   
   const queryClient = useQueryClient();
   const toast = useToast();
@@ -106,6 +108,52 @@ export function AttendancePage() {
 
   return (
     <div className="space-y-6">
+      {/* Dropdown de Funcionários Ativos */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="w-full max-w-md">
+          <label className="block text-sm font-medium text-gray-700 mb-1">Selecionar Funcionário</label>
+          <Input
+            placeholder="Buscar funcionário..."
+            className="mb-2"
+            value={employeeSearch}
+            onChange={e => setEmployeeSearch(e.target.value)}
+          />
+          <Select
+            value={selectedEmployeeId}
+            onChange={e => setSelectedEmployeeId(e.target.value)}
+          >
+            <option value="">Todos os funcionários</option>
+            {employees
+              .filter(emp =>
+                emp.name.toLowerCase().includes(employeeSearch.toLowerCase())
+              )
+              .map(emp => (
+                <option key={emp.id} value={emp.id}>
+                  {emp.name} - {emp.department}
+                </option>
+              ))}
+          </Select>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="primary"
+            size="md"
+            onClick={() => setShowAddModal(true)}
+            disabled={!selectedEmployeeId}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Lançar Frequência Individual
+          </Button>
+          <Button
+            variant="outline"
+            size="md"
+            onClick={() => setShowBatchModal(true)}
+          >
+            <Upload className="h-4 w-4 mr-2" />
+            Lançamento em Lote
+          </Button>
+        </div>
+      </div>
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -334,6 +382,7 @@ export function AttendancePage() {
       {showAddModal && (
         <AttendanceModal
           employees={employees}
+          selectedEmployeeId={selectedEmployeeId}
           onClose={() => setShowAddModal(false)}
           onSubmit={(data) => createMutation.mutate(data)}
           isLoading={createMutation.isPending}
@@ -355,15 +404,23 @@ export function AttendancePage() {
 
 // Single Attendance Modal Component
 function AttendanceModal({ employees, onClose, onSubmit, isLoading }) {
-  const { register, handleSubmit, formState: { errors } } = useForm({
+  const { register, handleSubmit, setValue, formState: { errors } } = useForm({
     resolver: zodResolver(attendanceSchema),
     defaultValues: {
+      employeeId: employees.find(e => e.id === (typeof selectedEmployeeId !== 'undefined' ? selectedEmployeeId : ''))?.id || '',
       hoursWorked: 8,
       overtimeHours50: 0,
       overtimeHours100: 0,
       absences: 0,
     },
   });
+
+  // Preenche o funcionário selecionado ao abrir o modal
+  React.useEffect(() => {
+    if (employees && employees.length && selectedEmployeeId) {
+      setValue('employeeId', selectedEmployeeId);
+    }
+  }, [selectedEmployeeId, employees, setValue]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
