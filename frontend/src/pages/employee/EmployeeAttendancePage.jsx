@@ -97,6 +97,9 @@ export function EmployeeAttendancePage() {
     { label: 'Horas Extras', value: `${totalOvertime.toFixed(1)}h`, color: 'text-orange-600 bg-orange-50' },
   ];
 
+  return (
+    <div className="space-y-6">
+
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4">
