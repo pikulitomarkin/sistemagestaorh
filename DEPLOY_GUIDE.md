@@ -14,6 +14,19 @@
    - **Root Directory:** (deixe vazio ou "backend" se for monorepo)
    - **Branch:** main
    - **Region:** (padrão)
+  - **(Opcional para build customizado ou erro de Dockerfile):**
+    - Adicione um arquivo `Dockerfile` na pasta `backend` com o seguinte conteúdo:
+
+     ```dockerfile
+     # Build stage
+     FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
+     WORKDIR /app
+     COPY . .
+     EXPOSE 8080
+     ENTRYPOINT ["dotnet", "HRManagementAPI.dll"]
+     ```
+
+    - No Render, selecione "Docker" como ambiente e aponte para o Dockerfile.
 6. **Variáveis de ambiente:**
    - `ASPNETCORE_ENVIRONMENT=Production`
    - (opcional) `ConnectionStrings__DefaultConnection=Data Source=app.db` (ou use SQLite padrão)
