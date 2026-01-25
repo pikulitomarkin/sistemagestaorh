@@ -31,8 +31,21 @@ public class AuthController : ControllerBase
         if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
             return Unauthorized();
 
+        var employee = _context.Employees.FirstOrDefault(e => e.UserId == user.Id);
+
         var token = GenerateJwtToken(user);
-        return Ok(new { Token = token, Role = user.Role });
+        return Ok(new 
+        { 
+            token = token,
+            user = new 
+            {
+                id = user.Id,
+                username = user.Username,
+                role = user.Role,
+                name = employee?.Name ?? user.Username,
+                employeeId = employee?.Id
+            }
+        });
     }
 
     private string GenerateJwtToken(User user)

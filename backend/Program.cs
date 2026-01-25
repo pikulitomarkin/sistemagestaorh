@@ -33,10 +33,16 @@ builder.Services.AddAuthorization();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowSpecificOrigins", builder => builder
-        .WithOrigins("http://localhost:5173", "https://your-production-domain.com") // Adicione suas origens permitidas
+        .WithOrigins(
+            "http://localhost:5173",
+            "http://localhost:5174",
+            "http://127.0.0.1:5173",
+            "https://your-production-domain.com"
+        )
         .AllowAnyMethod()
         .AllowAnyHeader()
-        .AllowCredentials());
+        .AllowCredentials()
+        .SetIsOriginAllowedToAllowWildcardSubdomains());
 });
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -58,22 +64,95 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-// Seed database with test user
+// Seed database with test users
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     context.Database.EnsureCreated();
+    
+    // RH User - rh_test / 123
     if (!context.Users.Any(u => u.Username == "rh_test"))
     {
-        var hashedPassword = BCrypt.Net.BCrypt.HashPassword("123");
-        context.Users.Add(new User
+        var rhUser = new User
         {
             Username = "rh_test",
-            PasswordHash = hashedPassword,
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("123"),
             Role = "RH"
-        });
+        };
+        context.Users.Add(rhUser);
         context.SaveChanges();
+        
+        // Create employee profile for RH
+        context.Employees.Add(new Employee
+        {
+            Name = "Maria Silva",
+            CPF = "111.222.333-44",
+            MonthlySalary = 8000.00m,
+            MonthlyWorkHours = 220,
+            Position = "Gerente de RH",
+            Department = "Recursos Humanos",
+            HireDate = DateTime.Now.AddYears(-3),
+            UserId = rhUser.Id,
+            IsActive = true
+        });
     }
+    
+    // Gerente User - gerente_test / 123
+    if (!context.Users.Any(u => u.Username == "gerente_test"))
+    {
+        var gerenteUser = new User
+        {
+            Username = "gerente_test",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("123"),
+            Role = "Gerente"
+        };
+        context.Users.Add(gerenteUser);
+        context.SaveChanges();
+        
+        // Create employee profile for Gerente
+        context.Employees.Add(new Employee
+        {
+            Name = "João Santos",
+            CPF = "222.333.444-55",
+            MonthlySalary = 12000.00m,
+            MonthlyWorkHours = 220,
+            Position = "Gerente Geral",
+            Department = "Administração",
+            HireDate = DateTime.Now.AddYears(-5),
+            UserId = gerenteUser.Id,
+            IsActive = true
+        });
+    }
+    
+    // Colaborador User - colaborador_test / 123
+    if (!context.Users.Any(u => u.Username == "colaborador_test"))
+    {
+        var colaboradorUser = new User
+        {
+            Username = "colaborador_test",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("123"),
+            Role = "Colaborador"
+        };
+        context.Users.Add(colaboradorUser);
+        context.SaveChanges();
+        
+        // Create employee profile for Colaborador
+        context.Employees.Add(new Employee
+        {
+            Name = "Ana Costa",
+            CPF = "333.444.555-66",
+            MonthlySalary = 3500.00m,
+            MonthlyWorkHours = 220,
+            Position = "Analista",
+            Department = "Operações",
+            HireDate = DateTime.Now.AddYears(-1),
+            UserId = colaboradorUser.Id,
+            IsActive = true
+        });
+    }
+    
+    // Add some additional test employees
+    context.SaveChanges();
 }
 
 app.Run();

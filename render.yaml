@@ -1,0 +1,16 @@
+# Render.com - Backend .NET Core
+# Permite build e deploy automático do backend
+services:
+  - type: web
+    name: hr-backend
+    env: dotnet
+    buildCommand: dotnet build
+    startCommand: dotnet run --project backend/HRManagementAPI.csproj
+    plan: free
+    branch: main
+    rootDir: backend
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ConnectionStrings__DefaultConnection
+        value: Data Source=app.db

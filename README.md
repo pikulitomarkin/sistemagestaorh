@@ -41,13 +41,17 @@ Sistema completo de gestão de recursos humanos (RH) com backend ASP.NET Core e 
 - **BCrypt.NET** - Hash de senhas
 - **Swagger** - Documentação de API
 
-### Frontend
-- **React 18** - UI Library
-- **Vite** - Build tool
-- **Tailwind CSS** - Styling
-- **Axios** - HTTP client
-- **React Router** - Navegação
-- **Lucide React** - Ícones
+### Frontend ⭐ NOVO
+- **React 19** - UI Library
+- **Vite 7** - Build tool ultra-rápido
+- **TanStack Query** - Server state management
+- **Zustand** - Client state (leve e performático)
+- **React Hook Form** - Formulários com validação
+- **Zod** - Schema validation type-safe
+- **Axios** - HTTP client com interceptors
+- **Tailwind CSS** - Utility-first styling
+- **Recharts** - Gráficos e visualizações
+- **Lucide React** - Ícones modernos (600+)
 
 ## 📋 Pré-requisitos
 
@@ -84,13 +88,17 @@ dotnet run
 
 O backend estará disponível em `http://localhost:5000`
 
-### 3. Frontend
+### Frontend
 
 ```bash
 cd frontend
 
 # Instalar dependências
 npm install
+
+# Configurar ambiente
+cp .env.example .env
+# Editar .env: VITE_API_URL=http://localhost:5000/api
 
 # Executar em modo desenvolvimento
 npm run dev
@@ -100,6 +108,12 @@ npm run build
 ```
 
 O frontend estará disponível em `http://localhost:5173`
+
+**📚 Documentação Frontend Completa:**
+- [ARQUITETURA.md](frontend/ARQUITETURA.md) - Documentação técnica (400+ linhas)
+- [ESTRUTURA.md](frontend/ESTRUTURA.md) - Resumo visual da estrutura
+- [INSTALACAO.md](frontend/INSTALACAO.md) - Guia de instalação detalhado
+- [INDICE.md](frontend/INDICE.md) - Navegação rápida pela documentação
 
 ## 🔐 Usuários de Teste
 
@@ -118,7 +132,7 @@ O frontend estará disponível em `http://localhost:5173`
 
 ```
 sistemagestaorh/
-├── backend/
+├── backend/                  # ASP.NET Core 8.0
 │   ├── Controllers/          # Endpoints da API
 │   │   ├── AuthController.cs
 │   │   ├── EmployeesController.cs
@@ -135,20 +149,23 @@ sistemagestaorh/
 │   │   └── PayrollService.cs
 │   └── Program.cs           # Configuração e startup
 │
-├── frontend/
+├── frontend/                 # ⭐ NOVO: React 19 + Vite
 │   ├── src/
 │   │   ├── components/      # Componentes reutilizáveis
-│   │   │   ├── ui/         # Design system
-│   │   │   └── layout/     # Layouts
+│   │   │   ├── ui/         # Design System (8 componentes)
+│   │   │   ├── layout/     # DashboardLayout responsivo
+│   │   │   └── payroll/    # Holerite Digital
 │   │   ├── pages/          # Páginas principais
-│   │   │   ├── Login.jsx
-│   │   │   ├── RHDashboard.jsx
-│   │   │   ├── ManagerDashboard.jsx
-│   │   │   └── EmployeeDashboard.jsx
+│   │   │   ├── auth/       # Login com validação
+│   │   │   └── rh/         # Dashboard + Frequência
+│   │   ├── services/       # API client (Axios + JWT)
+│   │   ├── stores/         # Estado global (Zustand)
 │   │   ├── hooks/          # Custom hooks
-│   │   ├── services/       # API client
-│   │   └── utils/          # Utilitários
-│   └── tailwind.config.js
+│   │   └── lib/            # Utilitários + Cálculos CLT
+│   ├── 📖 ARQUITETURA.md   # Documentação técnica completa
+│   ├── 📦 ESTRUTURA.md     # Resumo visual
+│   ├── 🚀 INSTALACAO.md    # Guia de instalação
+│   └── 🗺️ INDICE.md        # Navegação rápida
 │
 └── AUDITORIA_REFATORACAO.md  # Relatório técnico completo
 ```

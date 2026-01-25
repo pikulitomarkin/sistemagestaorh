@@ -1,101 +1,111 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { useAuth } from './hooks/useAuth';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { ToastProvider } from './components/ui/Toast';
-import Login from './pages/Login';
-import Dashboard from './components/Dashboard';
-import Attendance from './pages/Attendance';
-import PayrollView from './pages/PayrollView';
-import RHDashboard from './pages/RHDashboard';
-import ManagerDashboard from './pages/ManagerDashboard';
-import EmployeeDashboard from './pages/EmployeeDashboard';
+import { DashboardLayout } from './components/layout/DashboardLayout';
+import { LoginPage } from './pages/auth/LoginPage';
+import { RHDashboard } from './pages/rh/RHDashboard';
+import { AttendancePage } from './pages/rh/AttendancePage';
+import { EmployeesPage } from './pages/rh/EmployeesPage';
+import { PayrollPage } from './pages/rh/PayrollPage';
+import { ReportsPage } from './pages/rh/ReportsPage';
+import { ManagerDashboard } from './pages/manager/ManagerDashboard';
+import { ManagerEmployeesPage } from './pages/manager/ManagerEmployeesPage';
+import { ManagerReportsPage } from './pages/manager/ManagerReportsPage';
+import { EmployeeDashboard } from './pages/employee/EmployeeDashboard';
+import { EmployeeAttendancePage } from './pages/employee/EmployeeAttendancePage';
+import { EmployeePayslipsPage } from './pages/employee/EmployeePayslipsPage';
+import useAuthStore from './stores/authStore';
+
+// Create a query client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    },
+  },
+});
+
+// Protected Route Component
+function ProtectedRoute({ children, allowedRoles }) {
+  const { isAuthenticated, user } = useAuthStore();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (allowedRoles && !allowedRoles.includes(user?.role)) {
+    return <Navigate to="/unauthorized" replace />;
+  }
+
+  return children;
+}
 
 function App() {
   return (
-    <ToastProvider>
-      <AppRoutes />
-    </ToastProvider>
+    <QueryClientProvider client={queryClient}>
+      <ToastProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/login" element={<LoginPage />} />
+            
+            {/* Protected Routes - RH */}
+            <Route path="/rh" element={
+              <ProtectedRoute allowedRoles={['RH']}>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }>
+              <Route index element={<Navigate to="/rh/dashboard" replace />} />
+              <Route path="dashboard" element={<RHDashboard />} />
+              <Route path="employees" element={<EmployeesPage />} />
+              <Route path="attendance" element={<AttendancePage />} />
+              <Route path="payroll" element={<PayrollPage />} />
+              <Route path="reports" element={<ReportsPage />} />
+            </Route>
+
+            {/* Protected Routes - Manager */}
+            <Route path="/manager" element={
+              <ProtectedRoute allowedRoles={['Gerente']}>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }>
+              <Route index element={<Navigate to="/manager/dashboard" replace />} />
+              <Route path="dashboard" element={<ManagerDashboard />} />
+              <Route path="team" element={<ManagerEmployeesPage />} />
+              <Route path="reports" element={<ManagerReportsPage />} />
+            </Route>
+
+            {/* Protected Routes - Employee */}
+            <Route path="/employee" element={
+              <ProtectedRoute allowedRoles={['Colaborador']}>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }>
+              <Route index element={<Navigate to="/employee/dashboard" replace />} />
+              <Route path="dashboard" element={<EmployeeDashboard />} />
+              <Route path="attendance" element={<EmployeeAttendancePage />} />
+              <Route path="payslips" element={<EmployeePayslipsPage />} />
+            </Route>
+
+            {/* Default redirect */}
+            <Route path="/" element={<Navigate to="/login" replace />} />
+            
+            {/* 404 */}
+            <Route path="*" element={<div className="flex items-center justify-center h-screen">
+              <div className="text-center">
+                <h1 className="text-4xl font-bold text-gray-900">404</h1>
+                <p className="text-gray-600 mt-2">Página não encontrada</p>
+              </div>
+            </div>} />
+          </Routes>
+        </BrowserRouter>
+      </ToastProvider>
+      <ReactQueryDevtools initialIsOpen={false} />
+    </QueryClientProvider>
   );
-}
-
-function AppRoutes() {
-  try {
-    const { user } = useAuth();
-
-    const ProtectedRoute = ({ children, roles }) => {
-      if (!user) return <Navigate to="/login" />;
-      if (roles && !roles.includes(user.role)) return <Navigate to="/dashboard" />;
-      return children;
-    };
-
-    return (
-      <Router>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          
-          {/* Role-specific dashboards */}
-          <Route 
-            path="/dashboard/rh" 
-            element={
-              <ProtectedRoute roles={['RH']}>
-                <RHDashboard />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/dashboard/gerente" 
-            element={
-              <ProtectedRoute roles={['Gerente']}>
-                <ManagerDashboard />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/dashboard/funcionario" 
-            element={
-              <ProtectedRoute roles={['Funcionario']}>
-                <EmployeeDashboard />
-              </ProtectedRoute>
-            } 
-          />
-          
-          {/* Generic dashboard - redirects based on role */}
-          <Route 
-            path="/dashboard" 
-            element={
-              <ProtectedRoute>
-                {user?.role === 'RH' && <Navigate to="/dashboard/rh" />}
-                {user?.role === 'Gerente' && <Navigate to="/dashboard/gerente" />}
-                {user?.role === 'Funcionario' && <Navigate to="/dashboard/funcionario" />}
-                <Dashboard />
-              </ProtectedRoute>
-            } 
-          />
-          
-          <Route 
-            path="/attendance" 
-            element={
-              <ProtectedRoute roles={['RH']}>
-                <Attendance />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/payroll" 
-            element={
-              <ProtectedRoute roles={['Funcionario']}>
-                <PayrollView />
-              </ProtectedRoute>
-            } 
-          />
-          
-          <Route path="/" element={<Navigate to="/dashboard" />} />
-        </Routes>
-      </Router>
-    );
-  } catch (error) {
-    console.error('Error in App:', error);
-    return <div className="p-4">Erro no app. Verifique console.</div>;
-  }
 }
 
 export default App;

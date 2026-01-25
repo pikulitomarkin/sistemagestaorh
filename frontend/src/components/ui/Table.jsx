@@ -1,61 +1,78 @@
-// Table component
-export const Table = ({ columns, data, onRowClick, loading, emptyMessage = 'Nenhum registro encontrado' }) => {
-  if (loading) {
-    return (
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="animate-pulse p-4 space-y-3">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="h-12 bg-gray-200 rounded" />
-          ))}
-        </div>
-      </div>
-    );
-  }
+import { cn } from '../../lib/utils';
 
-  if (!data || data.length === 0) {
-    return (
-      <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">
-        {emptyMessage}
-      </div>
-    );
-  }
-
+export function Table({ children, className, ...props }) {
   return (
-    <div className="bg-white rounded-lg shadow overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              {columns.map((column, index) => (
-                <th
-                  key={index}
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  {column.header}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {data.map((row, rowIndex) => (
-              <tr
-                key={rowIndex}
-                onClick={() => onRowClick && onRowClick(row)}
-                className={onRowClick ? 'hover:bg-gray-50 cursor-pointer transition-colors' : ''}
-              >
-                {columns.map((column, colIndex) => (
-                  <td key={colIndex} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {column.render ? column.render(row[column.key], row) : row[column.key]}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+    <div className="relative w-full overflow-auto">
+      <table className={cn('w-full caption-bottom text-sm', className)} {...props}>
+        {children}
+      </table>
     </div>
   );
-};
+}
 
-export default Table;
+export function TableHeader({ children, className, ...props }) {
+  return (
+    <thead className={cn('[&_tr]:border-b bg-gray-50', className)} {...props}>
+      {children}
+    </thead>
+  );
+}
+
+export function TableBody({ children, className, ...props }) {
+  return (
+    <tbody className={cn('[&_tr:last-child]:border-0', className)} {...props}>
+      {children}
+    </tbody>
+  );
+}
+
+export function TableFooter({ children, className, ...props }) {
+  return (
+    <tfoot className={cn('bg-gray-50 font-medium [&>tr]:last:border-b-0', className)} {...props}>
+      {children}
+    </tfoot>
+  );
+}
+
+export function TableRow({ children, className, ...props }) {
+  return (
+    <tr
+      className={cn(
+        'border-b transition-colors hover:bg-gray-50/50 data-[state=selected]:bg-gray-50',
+        className
+      )}
+      {...props}
+    >
+      {children}
+    </tr>
+  );
+}
+
+export function TableHead({ children, className, ...props }) {
+  return (
+    <th
+      className={cn(
+        'h-12 px-4 text-left align-middle font-medium text-gray-700',
+        '[&:has([role=checkbox])]:pr-0',
+        className
+      )}
+      {...props}
+    >
+      {children}
+    </th>
+  );
+}
+
+export function TableCell({ children, className, ...props }) {
+  return (
+    <td
+      className={cn(
+        'p-4 align-middle [&:has([role=checkbox])]:pr-0',
+        className
+      )}
+      {...props}
+    >
+      {children}
+    </td>
+  );
+}

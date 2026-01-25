@@ -1,8 +1,9 @@
 {
-  "name": "frontend",
+  "name": "hr-management-frontend",
   "private": true,
-  "version": "0.0.0",
+  "version": "2.0.0",
   "type": "module",
+  "description": "Sistema de Gestão de RH - Enterprise Edition Frontend",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -10,15 +11,24 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@hookform/resolvers": "^3.3.4",
+    "@tanstack/react-query": "^5.17.19",
+    "@tanstack/react-query-devtools": "^5.17.19",
     "autoprefixer": "^10.4.23",
     "axios": "^1.13.2",
+    "clsx": "^2.1.0",
+    "date-fns": "^3.2.0",
     "jwt-decode": "^4.0.0",
     "lucide-react": "^0.563.0",
     "postcss": "^8.5.6",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-hook-form": "^7.49.3",
     "react-router-dom": "^6.30.3",
-    "tailwindcss": "^4.1.18"
+    "recharts": "^2.10.4",
+    "tailwindcss": "^4.1.18",
+    "zod": "^3.22.4",
+    "zustand": "^4.5.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

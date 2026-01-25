@@ -1,0 +1,249 @@
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useForm } from 'react-hook-form';
+import { attendanceService } from '../../services/api';
+import useAuthStore from '../../stores/authStore';
+import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
+import { Button } from '../../components/ui/Button';
+import { Input } from '../../components/ui/Input';
+import { Select } from '../../components/ui/Select';
+import { Badge } from '../../components/ui/Badge';
+import { Table } from '../../components/ui/Table';
+import { useToast } from '../../components/ui/Toast';
+import { Calendar, Clock, Plus, X } from 'lucide-react';
+import { formatDate } from '../../lib/utils';
+
+export function EmployeeAttendancePage() {
+  const { user } = useAuthStore();
+  const currentDate = new Date();
+  const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear());
+  const [showModal, setShowModal] = useState(false);
+  const { showToast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { register, handleSubmit, reset } = useForm({
+    defaultValues: {
+      date: new Date().toISOString().split('T')[0],
+      isAbsent: false,
+      overtimeHours: 0,
+      doubleTimeHours: 0,
+      notes: '',
+    },
+  });
+
+  // Fetch my attendance
+  const { data: attendances = [], isLoading } = useQuery({
+    queryKey: ['my-attendances', selectedMonth, selectedYear],
+    queryFn: () => attendanceService.getAll({
+      month: selectedMonth,
+      year: selectedYear,
+      employeeId: user.employeeId,
+    }),
+  });
+
+  // Register attendance mutation
+  const registerMutation = useMutation({
+    mutationFn: (data) => attendanceService.create({
+      ...data,
+      employeeId: user.employeeId,
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['my-attendances']);
+      showToast('Ponto registrado com sucesso', 'success');
+      handleCloseModal();
+    },
+    onError: () => {
+      showToast('Erro ao registrar ponto', 'error');
+    },
+  });
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    reset();
+  };
+
+  const onSubmit = (data) => {
+    registerMutation.mutate({
+      ...data,
+      isAbsent: data.isAbsent === 'true',
+      overtimeHours: Number(data.overtimeHours),
+      doubleTimeHours: Number(data.doubleTimeHours),
+    });
+  };
+
+  // Calculate stats
+  const totalDays = attendances.length;
+  const absences = attendances.filter(a => a.isAbsent).length;
+  const presences = totalDays - absences;
+  const totalOvertime = attendances.reduce((sum, a) => sum + (a.overtimeHours || 0), 0);
+
+  const stats = [
+    { label: 'Dias Registrados', value: totalDays, color: 'text-blue-600 bg-blue-50' },
+    { label: 'Presenças', value: presences, color: 'text-green-600 bg-green-50' },
+    { label: 'Faltas', value: absences, color: 'text-red-600 bg-red-50' },
+    { label: 'Horas Extras', value: `${totalOvertime.toFixed(1)}h`, color: 'text-orange-600 bg-orange-50' },
+  ];
+
+  const months = [
+    { value: 1, label: 'Janeiro' }, { value: 2, label: 'Fevereiro' }, { value: 3, label: 'Março' },
+    { value: 4, label: 'Abril' }, { value: 5, label: 'Maio' }, { value: 6, label: 'Junho' },
+    { value: 7, label: 'Julho' }, { value: 8, label: 'Agosto' }, { value: 9, label: 'Setembro' },
+    { value: 10, label: 'Outubro' }, { value: 11, label: 'Novembro' }, { value: 12, label: 'Dezembro' },
+  ];
+
+  const years = Array.from({ length: 3 }, (_, i) => currentDate.getFullYear() - 1 + i);
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Minha Frequência</h1>
+          <p className="text-gray-600 mt-1">Registre seu ponto e acompanhe sua frequência</p>
+        </div>
+        <Button onClick={() => setShowModal(true)}>
+          <Plus className="w-4 h-4 mr-2" />
+          Registrar Ponto
+        </Button>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {stats.map((stat) => (
+          <Card key={stat.label}>
+            <CardContent className="pt-6">
+              <div className={`inline-flex p-3 rounded-lg ${stat.color} mb-2`}>
+                <Clock className="w-6 h-6" />
+              </div>
+              <p className="text-sm text-gray-600">{stat.label}</p>
+              <p className="text-2xl font-bold text-gray-900 mt-1">{stat.value}</p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Filters */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Select value={selectedMonth} onChange={(e) => setSelectedMonth(Number(e.target.value))}>
+              {months.map(month => (
+                <option key={month.value} value={month.value}>{month.label}</option>
+              ))}
+            </Select>
+            <Select value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))}>
+              {years.map(year => (
+                <option key={year} value={year}>{year}</option>
+              ))}
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Attendance Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Registro de Pontos ({attendances.length})</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="text-center py-8 text-gray-500">Carregando...</div>
+          ) : attendances.length === 0 ? (
+            <div className="text-center py-12">
+              <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-500 mb-4">Nenhum ponto registrado ainda</p>
+              <Button onClick={() => setShowModal(true)}>
+                <Plus className="w-4 h-4 mr-2" />
+                Registrar Primeiro Ponto
+              </Button>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <thead>
+                  <tr>
+                    <th>Data</th>
+                    <th>Status</th>
+                    <th>Hora Extra (50%)</th>
+                    <th>Hora Extra (100%)</th>
+                    <th>Observações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {attendances.map((attendance) => (
+                    <tr key={attendance.id}>
+                      <td className="font-medium">{formatDate(attendance.date)}</td>
+                      <td>
+                        <Badge variant={attendance.isAbsent ? 'danger' : 'success'}>
+                          {attendance.isAbsent ? 'Falta' : 'Presente'}
+                        </Badge>
+                      </td>
+                      <td className="text-gray-600">{attendance.overtimeHours?.toFixed(1)}h</td>
+                      <td className="text-gray-600">{attendance.doubleTimeHours?.toFixed(1)}h</td>
+                      <td className="text-gray-600 max-w-xs truncate">{attendance.notes || '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Register Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-md">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Registrar Ponto</CardTitle>
+              <button onClick={handleCloseModal} className="text-gray-500 hover:text-gray-700">
+                <X className="w-5 h-5" />
+              </button>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Data *</label>
+                  <Input type="date" {...register('date')} />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Status *</label>
+                  <Select {...register('isAbsent')}>
+                    <option value="false">Presente</option>
+                    <option value="true">Ausente</option>
+                  </Select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Horas Extras 50%</label>
+                  <Input type="number" step="0.5" {...register('overtimeHours')} />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Horas Extras 100%</label>
+                  <Input type="number" step="0.5" {...register('doubleTimeHours')} />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Observações</label>
+                  <Input {...register('notes')} placeholder="Opcional" />
+                </div>
+
+                <div className="flex justify-end gap-3 pt-4">
+                  <Button type="button" variant="outline" onClick={handleCloseModal}>
+                    Cancelar
+                  </Button>
+                  <Button type="submit" disabled={registerMutation.isPending}>
+                    {registerMutation.isPending ? 'Registrando...' : 'Registrar'}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+    </div>
+  );
+}
