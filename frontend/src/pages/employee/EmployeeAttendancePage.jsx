@@ -11,7 +11,7 @@ import { Select } from '../../components/ui/Select';
 import { Badge } from '../../components/ui/Badge';
 import { Table } from '../../components/ui/Table';
 import { useToast } from '../../components/ui/Toast';
-import { Calendar, Clock, Plus, X } from 'lucide-react';
+import { Calendar, Clock } from 'lucide-react';
 import { formatDate } from '../../lib/utils';
 
 export function EmployeeAttendancePage() {
@@ -19,7 +19,6 @@ export function EmployeeAttendancePage() {
   const currentDate = new Date();
   const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear());
-  const [showModal, setShowModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const { showToast } = useToast();
   const queryClient = useQueryClient();
@@ -35,13 +34,11 @@ export function EmployeeAttendancePage() {
       notes: '',
     },
   });
-
   // Atualiza o campo date ao selecionar no calendário
   const handleDaySelect = (date) => {
     setSelectedDate(date);
     setValue('date', date.toISOString().split('T')[0]);
   };
-
   // Fetch my attendance
   const { data: attendances = [], isLoading } = useQuery({
     queryKey: ['my-attendances', selectedMonth, selectedYear],
@@ -61,17 +58,12 @@ export function EmployeeAttendancePage() {
     onSuccess: () => {
       queryClient.invalidateQueries(['my-attendances']);
       showToast('Ponto registrado com sucesso', 'success');
-      handleCloseModal();
+      reset();
     },
     onError: () => {
       showToast('Erro ao registrar ponto', 'error');
     },
   });
-
-  const handleCloseModal = () => {
-    setShowModal(false);
-    reset();
-  };
 
   const onSubmit = (data) => {
     registerMutation.mutate({
@@ -99,63 +91,88 @@ export function EmployeeAttendancePage() {
 
   return (
     <div className="space-y-6">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {stats.map((stat, index) => (
+          <Card key={index}>
+            <CardContent className="p-6">
+              <div className={`inline-flex items-center justify-center w-12 h-12 rounded-lg ${stat.color} mb-3`}>
+                <Calendar className="w-6 h-6" />
+              </div>
+              <p className="text-sm font-medium text-gray-600 mb-1">{stat.label}</p>
+              <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
 
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4">
-            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-              <h2 className="text-xl font-semibold text-gray-900">Registrar Frequência</h2>
-              <button onClick={handleCloseModal} className="text-gray-400 hover:text-gray-600">
-                <X className="w-5 h-5" />
-              </button>
+      {/* Quick Register Card */}
+      <Card>
+        <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-700">
+          <CardTitle className="text-white flex items-center">
+            <Clock className="w-5 h-5 mr-2" />
+            Registrar Ponto Rápido
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Selecione o dia do mês</label>
+          <MonthCalendar value={selectedDate} onChange={handleDaySelect} />
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 mt-4">
+            <Select label="Status" {...register('isAbsent')}>
+              <option value={false}>Presente</option>
+              <option value={true}>Falta</option>
+            </Select>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Input
+                type="time"
+                label="Hora de Entrada"
+                {...register('entryTime')}
+              />
+              <Input
+                type="time"
+                label="Hora de Saída"
+                {...register('exitTime')}
+              />
             </div>
-            <div className="p-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Selecione o dia do mês</label>
-              <MonthCalendar value={selectedDate} onChange={handleDaySelect} />
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 mt-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <Input
-                    type="time"
-                    label="Hora de Entrada"
-                    {...register('entryTime')}
-                  />
-                  <Input
-                    type="time"
-                    label="Hora de Saída"
-                    {...register('exitTime')}
-                  />
-                </div>
-                <Select label="Presença" {...register('isAbsent')}>
-                  <option value={false}>Presente</option>
-                  <option value={true}>Falta</option>
-                </Select>
-                <Input
-                  type="number"
-                  label="Horas Extras"
-                  step="0.5"
-                  {...register('overtimeHours', { valueAsNumber: true })}
-                />
-                <Input
-                  type="number"
-                  label="Horas Extras 100%"
-                  step="0.5"
-                  {...register('doubleTimeHours', { valueAsNumber: true })}
-                />
-                <Input label="Observações" {...register('notes')} />
-                <div className="flex justify-end gap-3 pt-4">
-                  <Button type="button" variant="outline" onClick={handleCloseModal}>
-                    Cancelar
-                  </Button>
-                  <Button type="submit" variant="primary" loading={registerMutation.isPending}>
-                    Registrar
-                  </Button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Input
+                type="number"
+                label="HE 50%"
+                step="0.5"
+                placeholder="0"
+                {...register('overtimeHours', { valueAsNumber: true })}
+              />
+              <Input
+                type="number"
+                label="HE 100%"
+                step="0.5"
+                placeholder="0"
+                {...register('doubleTimeHours', { valueAsNumber: true })}
+              />
+            </div>
+
+            <Input 
+              label="Observações (opcional)" 
+              placeholder="Ex: Home office, visita cliente..."
+              {...register('notes')} 
+            />
+
+            <div className="flex justify-end">
+              <Button 
+                type="submit" 
+                variant="primary" 
+                size="lg"
+                loading={registerMutation.isPending}
+              >
+                <Clock className="w-5 h-5 mr-2" />
+                Salvar Ponto
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
 
       {/* Attendance Table */}
       <Card>
@@ -169,10 +186,7 @@ export function EmployeeAttendancePage() {
             <div className="text-center py-12">
               <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-500 mb-4">Nenhum ponto registrado ainda</p>
-              <Button onClick={() => setShowModal(true)}>
-                <Plus className="w-4 h-4 mr-2" />
-                Registrar Primeiro Ponto
-              </Button>
+              <p className="text-gray-400">Use o formulário acima para registrar seu primeiro ponto</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -206,65 +220,6 @@ export function EmployeeAttendancePage() {
           )}
         </CardContent>
       </Card>
-
-
-
-      {/* Register Modal com calendário e hora de entrada/saída */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4">
-            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-              <h2 className="text-xl font-semibold text-gray-900">Registrar Frequência</h2>
-              <button onClick={handleCloseModal} className="text-gray-400 hover:text-gray-600">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="p-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Selecione o dia do mês</label>
-              <MonthCalendar value={selectedDate} onChange={handleDaySelect} />
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 mt-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <Input
-                    type="time"
-                    label="Hora de Entrada"
-                    {...register('entryTime')}
-                  />
-                  <Input
-                    type="time"
-                    label="Hora de Saída"
-                    {...register('exitTime')}
-                  />
-                </div>
-                <Select label="Presença" {...register('isAbsent')}>
-                  <option value={false}>Presente</option>
-                  <option value={true}>Falta</option>
-                </Select>
-                <Input
-                  type="number"
-                  label="Horas Extras"
-                  step="0.5"
-                  {...register('overtimeHours', { valueAsNumber: true })}
-                />
-                <Input
-                  type="number"
-                  label="Horas Extras 100%"
-                  step="0.5"
-                  {...register('doubleTimeHours', { valueAsNumber: true })}
-                />
-                <Input label="Observações" {...register('notes')} />
-                <div className="flex justify-end gap-3 pt-4">
-                  <Button type="button" variant="outline" onClick={handleCloseModal}>
-                    Cancelar
-                  </Button>
-                  <Button type="submit" variant="primary" loading={registerMutation.isPending}>
-                    Registrar
-                  </Button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
