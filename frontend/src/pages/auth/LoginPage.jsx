@@ -29,6 +29,8 @@ export function LoginPage() {
     },
   });
 
+  const submitForm = handleSubmit(onSubmit);
+
   const onSubmit = async (data) => {
     setIsLoading(true);
     try {
@@ -117,6 +119,15 @@ export function LoginPage() {
           © 2026 Sistema de Gestão de RH. Todos os direitos reservados.
         </p>
       </div>
+
+      {/* Floating Entrar button for quick access */}
+      <button
+        className="fixed bottom-6 right-6 bg-primary-600 text-white p-4 rounded-full shadow-lg hover:bg-primary-700 focus:outline-none"
+        onClick={submitForm}
+        aria-label="Entrar"
+      >
+        <LogIn className="w-5 h-5" />
+      </button>
     </div>
   );
 }
