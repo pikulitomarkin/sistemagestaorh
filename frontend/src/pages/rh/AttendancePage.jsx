@@ -490,21 +490,23 @@ function AttendanceModal({ employees, selectedEmployeeId, onClose, onSubmit, isL
               label="Observações"
               {...register('notes')}
             />
-            <div className="flex justify-end gap-3 pt-4">
+            <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
               <Button
                 type="button"
                 variant="outline"
                 onClick={onClose}
                 disabled={isLoading}
+                size="lg"
               >
                 Cancelar
               </Button>
               <Button
                 type="submit"
-                variant="primary"
                 loading={isLoading}
+                size="lg"
+                className="bg-blue-700 hover:bg-blue-800 text-white font-bold px-8 py-3 shadow-lg"
               >
-                Registrar
+                Salvar Lançamento
               </Button>
             </div>
           </form>
