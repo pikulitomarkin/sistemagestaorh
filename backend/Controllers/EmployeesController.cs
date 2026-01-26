@@ -266,6 +266,53 @@ public class EmployeesController : ControllerBase
             return StatusCode(500, new { error = "An error occurred while deactivating the employee" });
         }
     }
+
+    [HttpDelete("{id}")]
+    [Authorize(Roles = "RH")]
+    public async Task<IActionResult> DeleteEmployee(int id)
+    {
+        try
+        {
+            var employee = await _context.Employees
+                .Include(e => e.User)
+                .FirstOrDefaultAsync(e => e.Id == id);
+
+            if (employee == null)
+            {
+                return NotFound(new { error = "Employee not found" });
+            }
+
+            await using var transaction = await _context.Database.BeginTransactionAsync();
+
+            // Remove related attendances
+            var attendances = _context.Attendances.Where(a => a.EmployeeId == id);
+            _context.Attendances.RemoveRange(attendances);
+
+            // Remove related payrolls
+            var payrolls = _context.Payrolls.Where(p => p.EmployeeId == id);
+            _context.Payrolls.RemoveRange(payrolls);
+
+            // Remove employee
+            _context.Employees.Remove(employee);
+
+            // Remove linked user
+            if (employee.User != null)
+            {
+                _context.Users.Remove(employee.User);
+            }
+
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            _logger.LogInformation("Employee deleted: {EmployeeId}", id);
+            return Ok(new { message = "Employee deleted successfully" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting employee {EmployeeId}", id);
+            return StatusCode(500, new { error = "An error occurred while deleting the employee" });
+        }
+    }
 }
 
 public class CreateEmployeeRequest
