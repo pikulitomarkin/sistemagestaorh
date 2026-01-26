@@ -134,7 +134,7 @@ public class EmployeesController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "RH")]
+    [Authorize(Roles = "RH,Gerente")]
     public async Task<IActionResult> CreateEmployee([FromBody] CreateEmployeeRequest request)
     {
         try

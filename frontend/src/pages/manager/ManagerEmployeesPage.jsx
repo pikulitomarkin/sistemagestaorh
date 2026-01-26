@@ -93,7 +93,9 @@ export function ManagerEmployeesPage() {
       handleCloseModal();
     },
     onError: (error) => {
-      showToast(error.response?.data?.message || 'Erro ao salvar funcionário', 'error');
+      const message = error?.response?.data?.message || error?.message || 'Erro ao salvar funcionário';
+      showToast(message, 'error');
+      console.error('Failed to save employee', error);
     },
   });
 
@@ -140,6 +142,8 @@ export function ManagerEmployeesPage() {
   };
 
   const onSubmit = (data) => {
+    console.log('Submitting employee data', data);
+    showToast('Enviando cadastro...', 'info');
     saveMutation.mutate({
       ...data,
       monthlySalary: Number(data.monthlySalary),

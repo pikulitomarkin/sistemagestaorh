@@ -10,6 +10,7 @@ import { Badge } from '../../components/ui/Badge';
 import { Table } from '../../components/ui/Table';
 import { useToast } from '../../components/ui/Toast';
 import { Users, Search, Plus, Edit, Trash2, Eye, Filter } from 'lucide-react';
+import { ErrorBoundary } from '../../components/ErrorBoundary';
 import { formatCurrency, formatDate } from '../../lib/utils';
 
 export function EmployeesPage() {
@@ -110,12 +111,16 @@ export function EmployeesPage() {
   const handleEmployeeSubmit = async (form) => {
     // employeeService.create já envia o role, backend já cria usuário com acesso
     try {
+      console.log('RH creating employee', form);
+      showToast('Enviando cadastro...', 'info');
       await employeeService.create(form);
       queryClient.invalidateQueries(['employees']);
       showToast('Funcionário cadastrado com sucesso', 'success');
       handleCloseModal();
     } catch (err) {
-      showToast(err?.response?.data?.error || 'Erro ao cadastrar funcionário', 'error');
+      const message = err?.response?.data?.error || err?.message || 'Erro ao cadastrar funcionário';
+      showToast(message, 'error');
+      console.error('Failed to create employee', err);
     }
   };
 
@@ -281,12 +286,14 @@ export function EmployeesPage() {
               </button>
             </CardHeader>
             <CardContent>
-              <EmployeeForm
-                initialData={selectedEmployee}
-                mode={modalMode === 'view' ? 'view' : selectedEmployee ? 'edit' : 'create'}
-                onSubmit={handleEmployeeSubmit}
-                onCancel={handleCloseModal}
-              />
+              <ErrorBoundary>
+                <EmployeeForm
+                  initialData={selectedEmployee}
+                  mode={modalMode === 'view' ? 'view' : selectedEmployee ? 'edit' : 'create'}
+                  onSubmit={handleEmployeeSubmit}
+                  onCancel={handleCloseModal}
+                />
+              </ErrorBoundary>
             </CardContent>
           </Card>
         </div>
