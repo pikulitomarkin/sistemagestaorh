@@ -25,7 +25,7 @@ namespace HRManagementAPI.Services
         /// <summary>
         /// Método principal que orquestra o cálculo da folha para um ciclo específico.
         /// </summary>
-        public async Task<CyclePayResult> CalculateCyclePay(int employeeId, CycleType cycleType, DateTime referenceDate)
+        public async Task<CyclePayResult> CalculateCyclePay(int employeeId, CycleType cycleType, DateTime referenceDate, bool includeOvertime = true, bool includeDoubleTime = true)
         {
             var employee = await _context.Employees.FindAsync(employeeId);
             if (employee == null)
@@ -41,8 +41,8 @@ namespace HRManagementAPI.Services
                 .ToListAsync();
 
             int absenceDays = attendances.Count(a => a.IsAbsent);
-            decimal overtimeHours = attendances.Sum(a => a.OvertimeHours);
-            decimal doubleTimeHours = attendances.Sum(a => a.DoubleTimeHours);
+            decimal overtimeHours = includeOvertime ? attendances.Sum(a => a.OvertimeHours) : 0m;
+            decimal doubleTimeHours = includeDoubleTime ? attendances.Sum(a => a.DoubleTimeHours) : 0m;
 
             // Cálculos financeiros
             decimal hourlyRate = CalculateHourlyRate(employee.MonthlySalary, employee.MonthlyWorkHours);

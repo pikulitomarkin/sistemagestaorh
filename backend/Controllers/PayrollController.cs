@@ -69,7 +69,9 @@ public class PayrollController : ControllerBase
                     var calculation = await _payrollCalculationService.CalculateCyclePay(
                         employeeId,
                         request.CycleType,
-                        request.ReferenceDate);
+                        request.ReferenceDate,
+                        request.IncludeOvertime,
+                        request.IncludeDoubleTime);
 
                     // Save payroll record
                     var payroll = new Payroll
@@ -377,6 +379,10 @@ public class ProcessCycleRequest
 
     [Required]
     public DateTime ReferenceDate { get; set; }
+
+    // Flags to include or exclude overtime/double-time during batch processing
+    public bool IncludeOvertime { get; set; } = true;
+    public bool IncludeDoubleTime { get; set; } = true;
 }
 
 public class PayrollRequest
