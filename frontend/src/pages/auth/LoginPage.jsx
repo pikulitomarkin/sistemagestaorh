@@ -92,13 +92,13 @@ export function LoginPage() {
 
               <Button
                 type="submit"
-                variant="primary"
                 size="lg"
-                className="w-full mt-6"
+                className="w-full mt-6 bg-blue-700 hover:bg-blue-800 text-white font-bold py-4 shadow-lg"
                 loading={isLoading}
+                disabled={isLoading}
               >
                 <LogIn className="h-5 w-5 mr-2" />
-                Entrar
+                {isLoading ? 'Entrando...' : 'Entrar'}
               </Button>
             </form>
 
