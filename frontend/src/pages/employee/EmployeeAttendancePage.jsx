@@ -160,15 +160,17 @@ export function EmployeeAttendancePage() {
             />
 
             <div className="flex justify-end pt-4 border-t border-gray-200">
-              <Button 
-                type="submit" 
-                size="lg"
-                loading={registerMutation.isPending}
-                className="w-full sm:w-auto bg-blue-700 hover:bg-blue-800 text-white font-semibold px-8 py-3 text-base shadow-lg"
-              >
-                <Clock className="w-5 h-5 mr-2" />
-                Salvar Lançamento
-              </Button>
+              {user?.role === 'RH' && (
+                <Button 
+                  type="submit" 
+                  size="lg"
+                  loading={registerMutation.isPending}
+                  className="w-full sm:w-auto bg-blue-700 hover:bg-blue-800 text-white font-semibold px-8 py-3 text-base shadow-lg"
+                >
+                  <Clock className="w-5 h-5 mr-2" />
+                  Salvar Lançamento
+                </Button>
+              )}
             </div>
           </form>
         </CardContent>
