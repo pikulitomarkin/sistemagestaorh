@@ -15,6 +15,10 @@ namespace HRManagementAPI.Models
         [Required]
         public DateTime Date { get; set; }
         
+        public TimeSpan? EntryTime { get; set; }
+        
+        public TimeSpan? ExitTime { get; set; }
+        
         public bool IsAbsent { get; set; } = false;
         
         [Range(0, 24)]

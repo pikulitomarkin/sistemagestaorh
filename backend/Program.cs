@@ -66,7 +66,9 @@ app.MapControllers();
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    context.Database.EnsureCreated();
+    
+    // Apply pending migrations automatically
+    context.Database.Migrate();
     
     // RH User - rh_test / 123
     if (!context.Users.Any(u => u.Username == "rh_test"))

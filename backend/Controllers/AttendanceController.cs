@@ -47,6 +47,8 @@ public class AttendanceController : ControllerBase
                 {
                     a.Id,
                     a.Date,
+                    a.EntryTime,
+                    a.ExitTime,
                     a.IsAbsent,
                     a.OvertimeHours,
                     a.DoubleTimeHours,
@@ -101,6 +103,8 @@ public class AttendanceController : ControllerBase
                     a.EmployeeId,
                     EmployeeName = a.Employee.Name,
                     a.Date,
+                    a.EntryTime,
+                    a.ExitTime,
                     a.IsAbsent,
                     a.OvertimeHours,
                     a.DoubleTimeHours,
@@ -156,6 +160,8 @@ public class AttendanceController : ControllerBase
             {
                 EmployeeId = request.EmployeeId,
                 Date = request.Date.Date,
+                EntryTime = request.EntryTime,
+                ExitTime = request.ExitTime,
                 IsAbsent = request.IsAbsent,
                 OvertimeHours = request.OvertimeHours,
                 DoubleTimeHours = request.DoubleTimeHours,
@@ -176,6 +182,8 @@ public class AttendanceController : ControllerBase
                     attendance.Id,
                     attendance.EmployeeId,
                     attendance.Date,
+                    attendance.EntryTime,
+                    attendance.ExitTime,
                     attendance.IsAbsent,
                     attendance.OvertimeHours,
                     attendance.DoubleTimeHours
@@ -227,6 +235,8 @@ public class AttendanceController : ControllerBase
                 {
                     EmployeeId = request.EmployeeId,
                     Date = request.Date.Date,
+                    EntryTime = request.EntryTime,
+                    ExitTime = request.ExitTime,
                     IsAbsent = request.IsAbsent,
                     OvertimeHours = request.OvertimeHours,
                     DoubleTimeHours = request.DoubleTimeHours,
@@ -268,6 +278,8 @@ public class AttendanceController : ControllerBase
                 return NotFound(new { error = "Attendance record not found" });
             }
 
+            attendance.EntryTime = request.EntryTime;
+            attendance.ExitTime = request.ExitTime;
             attendance.IsAbsent = request.IsAbsent;
             attendance.OvertimeHours = request.OvertimeHours;
             attendance.DoubleTimeHours = request.DoubleTimeHours;
@@ -321,6 +333,10 @@ public class CreateAttendanceRequest
     [Required]
     public DateTime Date { get; set; }
 
+    public TimeSpan? EntryTime { get; set; }
+
+    public TimeSpan? ExitTime { get; set; }
+
     public bool IsAbsent { get; set; } = false;
 
     [Range(0, 24)]
@@ -335,6 +351,10 @@ public class CreateAttendanceRequest
 
 public class UpdateAttendanceRequest
 {
+    public TimeSpan? EntryTime { get; set; }
+
+    public TimeSpan? ExitTime { get; set; }
+
     public bool IsAbsent { get; set; }
 
     [Range(0, 24)]
