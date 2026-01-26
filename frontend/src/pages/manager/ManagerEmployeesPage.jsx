@@ -312,7 +312,11 @@ export function ManagerEmployeesPage() {
                   <Button type="button" variant="outline" onClick={handleCloseModal}>
                     Cancelar
                   </Button>
-                  <Button type="submit" disabled={saveMutation.isPending}>
+                  <Button 
+                    type="submit" 
+                    disabled={saveMutation.isPending}
+                    className="bg-blue-700 hover:bg-blue-800 text-white font-semibold px-6"
+                  >
                     {saveMutation.isPending ? 'Salvando...' : editingEmployee ? 'Atualizar' : 'Cadastrar'}
                   </Button>
                 </div>
