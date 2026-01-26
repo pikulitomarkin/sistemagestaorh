@@ -35,10 +35,9 @@ export function EmployeeDashboard() {
   // Fetch my attendance
   const { data: attendances = [] } = useQuery({
     queryKey: ['my-attendances', currentMonth, currentYear],
-    queryFn: () => attendanceService.getAll({
-      month: currentMonth,
-      year: currentYear,
-      employeeId: user.employeeId,
+    queryFn: () => attendanceService.getByEmployee(user.employeeId, {
+      startDate: new Date(currentYear, currentMonth - 1, 1).toISOString(),
+      endDate: new Date(currentYear, currentMonth, 0).toISOString(),
     }),
   });
 

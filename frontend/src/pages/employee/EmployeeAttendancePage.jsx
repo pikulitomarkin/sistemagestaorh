@@ -42,10 +42,9 @@ export function EmployeeAttendancePage() {
   // Fetch my attendance
   const { data: attendances = [], isLoading } = useQuery({
     queryKey: ['my-attendances', selectedMonth, selectedYear],
-    queryFn: () => attendanceService.getAll({
-      month: selectedMonth,
-      year: selectedYear,
-      employeeId: user.employeeId,
+    queryFn: () => attendanceService.getByEmployee(user.employeeId, {
+      startDate: new Date(selectedYear, selectedMonth - 1, 1).toISOString(),
+      endDate: new Date(selectedYear, selectedMonth, 0).toISOString(),
     }),
   });
 

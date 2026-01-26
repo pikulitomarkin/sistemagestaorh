@@ -68,7 +68,7 @@ public class AttendanceController : ControllerBase
     }
 
     [HttpGet("employee/{employeeId}")]
-    [Authorize(Roles = "RH,Gerente")]
+    [Authorize(Roles = "RH,Gerente,Colaborador")]
     public async Task<IActionResult> GetAttendanceByEmployee(
         int employeeId,
         [FromQuery] DateTime? startDate,
