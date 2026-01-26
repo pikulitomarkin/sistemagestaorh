@@ -559,13 +559,15 @@ function BatchAttendanceModal({ employees, onClose, onSubmit, isLoading }) {
     const batchData = attendanceRecords
       .filter(record => !record.isAbsent && record.entryTime && record.exitTime)
       .map(record => ({
-        employeeId: selectedEmployee,
+        employeeId: Number(selectedEmployee),
         date: record.date,
         entryTime: record.entryTime,
         exitTime: record.exitTime,
         isAbsent: false,
-        overtimeHours: 0,
-        doubleTimeHours: 0,
+        hoursWorked: 8,
+        overtimeHours50: 0,
+        overtimeHours100: 0,
+        absences: 0,
       }));
 
     onSubmit(batchData);
