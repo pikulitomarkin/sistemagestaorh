@@ -15,6 +15,9 @@ export function PayrollPage() {
   const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear());
   const [selectedCycle, setSelectedCycle] = useState('');
+  const [selectedEmployeeIds, setSelectedEmployeeIds] = useState([]);
+  const [showEmployeeSelector, setShowEmployeeSelector] = useState(false);
+  const [selectAllEmployees, setSelectAllEmployees] = useState(false);
   const { showToast } = useToast();
   const queryClient = useQueryClient();
 
@@ -39,6 +42,9 @@ export function PayrollPage() {
     mutationFn: payrollService.processCycle,
     onSuccess: () => {
       queryClient.invalidateQueries(['payrolls']);
+      setSelectedEmployeeIds([]);
+      setSelectAllEmployees(false);
+      setShowEmployeeSelector(false);
       showToast('Folha de pagamento processada com sucesso', 'success');
     },
     onError: () => {
@@ -52,13 +58,21 @@ export function PayrollPage() {
       return;
     }
 
-    const employeeIds = employees.filter(e => e.isActive).map(e => e.id);
-    
+    const employeeIds = selectedEmployeeIds.length > 0
+      ? selectedEmployeeIds
+      : employees.filter(e => e.isActive).map(e => e.id);
+
+    if (employeeIds.length === 0) {
+      showToast('Nenhum funcionário selecionado', 'warning');
+      return;
+    }
+
+    const referenceDate = new Date(selectedYear, selectedMonth - 1, 1).toISOString();
+
     processMutation.mutate({
-      month: selectedMonth,
-      year: selectedYear,
-      cycleType: selectedCycle,
       employeeIds,
+      cycleType: selectedCycle,
+      referenceDate,
     });
   };
 
@@ -185,7 +199,54 @@ export function PayrollPage() {
               <option value="Day20">Dia 20</option>
               <option value="Day05">Dia 05</option>
             </Select>
+
             <div className="flex items-center gap-2">
+              <div>
+                <button
+                  className="px-3 py-1 border rounded text-sm bg-white"
+                  onClick={() => setShowEmployeeSelector(!showEmployeeSelector)}
+                >
+                  Selecionar Funcionários ({selectedEmployeeIds.length || employees.filter(e => e.isActive).length})
+                </button>
+                {showEmployeeSelector && (
+                  <div className="mt-2 p-3 bg-white border rounded max-h-48 overflow-auto shadow">
+                    <label className="flex items-center gap-2 mb-2">
+                      <input
+                        type="checkbox"
+                        checked={selectAllEmployees}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setSelectAllEmployees(checked);
+                          if (checked) {
+                            setSelectedEmployeeIds(employees.filter(emp => emp.isActive).map(emp => emp.id));
+                          } else {
+                            setSelectedEmployeeIds([]);
+                          }
+                        }}
+                      />
+                      <span className="text-sm">Selecionar todos os ativos</span>
+                    </label>
+                    {employees.map(emp => (
+                      <label key={emp.id} className="flex items-center gap-2 py-1">
+                        <input
+                          type="checkbox"
+                          checked={selectedEmployeeIds.includes(emp.id)}
+                          onChange={(e) => {
+                            const checked = e.target.checked;
+                            setSelectedEmployeeIds(prev => {
+                              const next = checked ? [...prev, emp.id] : prev.filter(id => id !== emp.id);
+                              const activeCount = employees.filter(x => x.isActive).length;
+                              setSelectAllEmployees(next.length === activeCount);
+                              return next;
+                            });
+                          }}
+                        />
+                        <span className="text-sm">{emp.name} {emp.isActive ? '' : '(inativo)'}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
               <span className="text-sm text-gray-600">
                 Período: {months.find(m => m.value === selectedMonth)?.label}/{selectedYear}
               </span>

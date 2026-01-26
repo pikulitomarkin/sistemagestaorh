@@ -196,6 +196,13 @@ export const payrollService = {
     const response = await api.post('/payroll/process-batch', { month, year, cycle });
     return response.data;
   },
+
+  processCycle: async ({ employeeIds, cycleType, referenceDate }) => {
+    // Sends selected employee IDs along with cycle info to the API
+    const payload = { EmployeeIds: employeeIds, CycleType: cycleType, ReferenceDate: referenceDate };
+    const response = await api.post('/payroll/process-cycle', payload);
+    return response.data;
+  },
   
   getByEmployee: async (employeeId, params) => {
     const response = await api.get(`/payroll/employee/${employeeId}`, { params });
