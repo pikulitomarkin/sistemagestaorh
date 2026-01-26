@@ -337,6 +337,7 @@ export function ManagerEmployeesPage() {
                   </Button>
                 </div>
               </form>
+              </ErrorBoundary>
             </CardContent>
           </Card>
         </div>
