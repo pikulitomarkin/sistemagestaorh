@@ -99,6 +99,12 @@ export const employeeService = {
     const response = await api.get(`/employees/${id}`);
     return response.data;
   },
+
+  // Check availability for cpf or username
+  checkAvailability: async (params) => {
+    const response = await api.get('/employees/check', { params });
+    return response.data;
+  },
   
   create: async (data) => {
     const response = await api.post('/employees', data);
