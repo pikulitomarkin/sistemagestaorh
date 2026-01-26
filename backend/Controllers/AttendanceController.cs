@@ -191,7 +191,7 @@ public class AttendanceController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "RH")]
+    [Authorize(Roles = "RH,Colaborador")]
     public async Task<IActionResult> CreateAttendance([FromBody] CreateAttendanceRequest request)
     {
         try
@@ -201,9 +201,24 @@ public class AttendanceController : ControllerBase
                 return BadRequest(ModelState);
             }
 
+            // Security check: Colaboradores can only create their own records
+            var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+            if (userRole == "Colaborador")
+            {
+                var username = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value;
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
+                if (user == null) return Unauthorized();
+                
+                var employee = await _context.Employees.FirstOrDefaultAsync(e => e.UserId == user.Id);
+                if (employee == null || employee.Id != request.EmployeeId)
+                {
+                    return Forbid();
+                }
+            }
+
             // Check if employee exists and is active
-            var employee = await _context.Employees.FindAsync(request.EmployeeId);
-            if (employee == null || !employee.IsActive)
+            var employeeRecord = await _context.Employees.FindAsync(request.EmployeeId);
+            if (employeeRecord == null || !employeeRecord.IsActive)
             {
                 return BadRequest(new { error = "Employee not found or inactive" });
             }

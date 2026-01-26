@@ -103,8 +103,8 @@ export function EmployeeDashboard() {
     registerMutation.mutate({
       ...data,
       isAbsent: data.isAbsent === 'true',
-      entryTime: data.entryTime || null,
-      exitTime: data.exitTime || null,
+      entryTime: data.entryTime ? `${data.entryTime}:00` : null,
+      exitTime: data.exitTime ? `${data.exitTime}:00` : null,
       overtimeHours: Number(data.overtimeHours),
       doubleTimeHours: Number(data.doubleTimeHours),
     });

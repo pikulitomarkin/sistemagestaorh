@@ -71,8 +71,8 @@ export function EmployeeAttendancePage() {
       isAbsent: data.isAbsent === 'true',
       overtimeHours: Number(data.overtimeHours),
       doubleTimeHours: Number(data.doubleTimeHours),
-      entryTime: data.entryTime,
-      exitTime: data.exitTime,
+      entryTime: data.entryTime ? `${data.entryTime}:00` : null,
+      exitTime: data.exitTime ? `${data.exitTime}:00` : null,
     });
   };
 
