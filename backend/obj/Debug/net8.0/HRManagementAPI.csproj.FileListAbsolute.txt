@@ -72,3 +72,4 @@ C:\dashboard fina\backend\obj\Debug\net8.0\HRManagementAPI.pdb
 C:\dashboard fina\backend\obj\Debug\net8.0\HRManagementAPI.genruntimeconfig.cache
 C:\dashboard fina\backend\obj\Debug\net8.0\ref\HRManagementAPI.dll
 C:\dashboard fina\backend\bin\Debug\net8.0\appsettings.Production.json
+C:\dashboard fina\backend\obj\Debug\net8.0\HRManagementAPI.sourcelink.json
