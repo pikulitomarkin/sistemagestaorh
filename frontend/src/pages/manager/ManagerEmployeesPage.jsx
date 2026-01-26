@@ -12,6 +12,7 @@ import { Badge } from '../../components/ui/Badge';
 import { Table } from '../../components/ui/Table';
 import { useToast } from '../../components/ui/Toast';
 import { Users, Search, Plus, Edit, X, Trash2 } from 'lucide-react';
+import { ErrorBoundary } from '../../components/ErrorBoundary';
 import { formatCurrency, formatDate } from '../../lib/utils';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -32,6 +33,7 @@ export function ManagerEmployeesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState(null);
+  const [modalMode, setModalMode] = useState('edit'); // 'edit' | 'view' | 'create'
   const { showToast } = useToast();
   const queryClient = useQueryClient();
   const location = useLocation();
@@ -254,18 +256,20 @@ export function ManagerEmployeesPage() {
           <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>
-                {editingEmployee ? 'Editar Funcionário' : 'Novo Funcionário'}
+                {modalMode === 'view' ? 'Visualizar Funcionário' : editingEmployee ? 'Editar Funcionário' : 'Novo Funcionário'}
               </CardTitle>
               <button onClick={handleCloseModal} className="text-gray-500 hover:text-gray-700">
                 <X className="w-5 h-5" />
               </button>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Nome Completo *</label>
-                    <Input {...register('name')} />
+              <ErrorBoundary>
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                {/* mode prop based on modalMode and editingEmployee */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Nome Completo *</label>
+                      <Input {...register('name')} />
                     {errors.name && <p className="text-red-600 text-sm mt-1">{errors.name.message}</p>}
                   </div>
 
