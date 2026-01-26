@@ -19,6 +19,54 @@ public class AttendanceController : ControllerBase
         _logger = logger;
     }
 
+    [HttpGet]
+    [Authorize(Roles = "RH,Gerente")]
+    public async Task<IActionResult> GetAllAttendances(
+        [FromQuery] int? month,
+        [FromQuery] int? year)
+    {
+        try
+        {
+            var query = _context.Attendances
+                .Include(a => a.Employee)
+                .AsQueryable();
+
+            if (month.HasValue && year.HasValue)
+            {
+                var startDate = new DateTime(year.Value, month.Value, 1);
+                var endDate = startDate.AddMonths(1).AddDays(-1);
+                query = query.Where(a => a.Date.Date >= startDate.Date && a.Date.Date <= endDate.Date);
+            }
+
+            var attendances = await query
+                .OrderByDescending(a => a.Date)
+                .Select(a => new
+                {
+                    a.Id,
+                    a.EmployeeId,
+                    EmployeeName = a.Employee.Name,
+                    a.Date,
+                    a.EntryTime,
+                    a.ExitTime,
+                    a.IsAbsent,
+                    HoursWorked = 8,
+                    OvertimeHours50 = a.OvertimeHours,
+                    OvertimeHours100 = a.DoubleTimeHours,
+                    Absences = a.IsAbsent ? 1 : 0,
+                    a.Notes,
+                    Cycle = 1
+                })
+                .ToListAsync();
+
+            return Ok(attendances);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching all attendances");
+            return StatusCode(500, new { error = "An error occurred while fetching attendance records" });
+        }
+    }
+
     [HttpGet("employee/{employeeId}")]
     [Authorize(Roles = "RH,Gerente")]
     public async Task<IActionResult> GetAttendanceByEmployee(
