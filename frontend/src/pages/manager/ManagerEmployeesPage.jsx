@@ -118,8 +118,9 @@ export function ManagerEmployeesPage() {
     }
   };
 
-  const handleOpenModal = (employee = null) => {
+  const handleOpenModal = (employee = null, mode = 'edit') => {
     setEditingEmployee(employee);
+    setModalMode(mode);
     if (employee) {
       Object.keys(employee).forEach(key => {
         setValue(key, employee[key]);
@@ -152,7 +153,7 @@ export function ManagerEmployeesPage() {
           <h1 className="text-3xl font-bold text-gray-900">Gerenciar Funcionários</h1>
           <p className="text-gray-600 mt-1">Cadastre e atualize dados da sua equipe</p>
         </div>
-        <Button onClick={() => handleOpenModal()}>
+        <Button onClick={() => handleOpenModal(null, 'create')}>
           <Plus className="w-4 h-4 mr-2" />
           Novo Funcionário
         </Button>

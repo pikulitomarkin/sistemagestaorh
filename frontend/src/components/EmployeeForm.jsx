@@ -22,7 +22,7 @@ export function EmployeeForm({ initialData = null, mode = 'edit', onSubmit, onCa
     hireDate: initialData?.hireDate ? initialData.hireDate.slice(0, 10) : '',
     username: initialData?.username || '',
     password: '',
-    role: initialData?.role || 'Funcionario',
+    role: initialData?.role || 'Colaborador',
   });
   const [errors, setErrors] = useState({});
   const readOnly = mode === 'view';
@@ -43,7 +43,7 @@ export function EmployeeForm({ initialData = null, mode = 'edit', onSubmit, onCa
     if (!form.department) newErrors.department = 'Departamento obrigatório';
     if (!form.monthlySalary) newErrors.monthlySalary = 'Salário obrigatório';
     if (!form.hireDate) newErrors.hireDate = 'Data de admissão obrigatória';
-    if (!initialData && !form.password) newErrors.password = 'Senha obrigatória';
+    if (mode === 'create' && !form.password) newErrors.password = 'Senha obrigatória';
     if (!form.username) newErrors.username = 'Usuário obrigatório';
     setErrors(newErrors);
     if (Object.keys(newErrors).length > 0) return;
@@ -67,7 +67,7 @@ export function EmployeeForm({ initialData = null, mode = 'edit', onSubmit, onCa
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1.5">Tipo de Usuário</label>
           <select name="role" value={form.role} onChange={handleChange} disabled={readOnly} className="w-full px-4 py-2.5 border border-slate-300 rounded-lg">
-            <option value="Funcionario">Funcionário</option>
+            <option value="Colaborador">Colaborador</option>
             <option value="RH">RH</option>
             <option value="Gerente">Gerente</option>
           </select>

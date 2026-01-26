@@ -127,7 +127,7 @@ export function EmployeesPage() {
           <h1 className="text-3xl font-bold text-gray-900">Funcionários</h1>
           <p className="text-gray-600 mt-1">Gerencie os funcionários da empresa</p>
         </div>
-        <Button onClick={() => handleOpenModal(null, 'edit')}>
+        <Button onClick={() => handleOpenModal(null, 'create')}>
           <Plus className="w-4 h-4 mr-2" />
           Novo Funcionário
         </Button>
