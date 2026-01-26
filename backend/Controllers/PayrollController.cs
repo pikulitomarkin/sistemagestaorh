@@ -142,7 +142,7 @@ public class PayrollController : ControllerBase
     }
 
     [HttpGet("my-payrolls")]
-    [Authorize(Roles = "Funcionario")]
+    [Authorize(Roles = "Colaborador")]
     public async Task<IActionResult> GetMyPayrolls([FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate)
     {
         try
@@ -195,7 +195,7 @@ public class PayrollController : ControllerBase
     }
 
     [HttpGet("my-payroll/{id}")]
-    [Authorize(Roles = "Funcionario")]
+    [Authorize(Roles = "Colaborador")]
     public async Task<IActionResult> GetMyPayrollDetails(int id)
     {
         try

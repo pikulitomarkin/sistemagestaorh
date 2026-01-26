@@ -59,8 +59,9 @@ export function EmployeeAttendancePage() {
       showToast('Ponto registrado com sucesso', 'success');
       reset();
     },
-    onError: () => {
-      showToast('Erro ao registrar ponto', 'error');
+    onError: (error) => {
+      const message = error?.response?.data?.message || error?.message || 'Erro ao registrar ponto';
+      showToast(message, 'error');
     },
   });
 

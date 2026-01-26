@@ -171,6 +171,11 @@ export const payrollService = {
     return response.data;
   },
   
+  getMyPayrolls: async (params) => {
+    const response = await api.get('/payroll/my-payrolls', { params });
+    return response.data;
+  },
+  
   getById: async (id) => {
     const response = await api.get(`/payroll/${id}`);
     return response.data;

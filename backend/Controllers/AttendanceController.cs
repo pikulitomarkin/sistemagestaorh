@@ -76,6 +76,21 @@ public class AttendanceController : ControllerBase
     {
         try
         {
+            // Security check: Colaboradores can only see their own records
+            var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+            if (userRole == "Colaborador")
+            {
+                var username = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value;
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
+                if (user == null) return Unauthorized();
+                
+                var employee = await _context.Employees.FirstOrDefaultAsync(e => e.UserId == user.Id);
+                if (employee == null || employee.Id != employeeId)
+                {
+                    return Forbid();
+                }
+            }
+
             var query = _context.Attendances
                 .Where(a => a.EmployeeId == employeeId);
 

@@ -44,10 +44,9 @@ export function EmployeeDashboard() {
   // Fetch my payrolls
   const { data: payrolls = [] } = useQuery({
     queryKey: ['my-payrolls', currentMonth, currentYear],
-    queryFn: () => payrollService.getAll({
-      month: currentMonth,
-      year: currentYear,
-      employeeId: user.employeeId,
+    queryFn: () => payrollService.getMyPayrolls({
+      startDate: new Date(currentYear, currentMonth - 1, 1).toISOString(),
+      endDate: new Date(currentYear, currentMonth, 0).toISOString(),
     }),
   });
 
@@ -95,7 +94,8 @@ export function EmployeeDashboard() {
       });
     },
     onError: (error) => {
-      showToast(error.response?.data?.message || 'Erro ao registrar ponto', 'error');
+      const message = error?.response?.data?.message || error?.message || 'Erro ao registrar ponto';
+      showToast(message, 'error');
     },
   });
 

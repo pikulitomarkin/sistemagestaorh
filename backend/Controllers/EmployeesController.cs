@@ -96,7 +96,7 @@ public class EmployeesController : ControllerBase
     }
 
     [HttpGet("my-profile")]
-    [Authorize(Roles = "Funcionario")]
+    [Authorize(Roles = "Colaborador")]
     public async Task<IActionResult> GetMyProfile()
     {
         try
@@ -306,7 +306,7 @@ public class CreateEmployeeRequest
     public string Password { get; set; }
 
     [Required]
-    public string Role { get; set; } = "Funcionario";
+    public string Role { get; set; } = "Colaborador";
 }
 
 public class UpdateEmployeeRequest
