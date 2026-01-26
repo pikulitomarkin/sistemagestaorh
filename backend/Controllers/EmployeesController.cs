@@ -271,32 +271,6 @@ public class EmployeesController : ControllerBase
             return StatusCode(500, new { error = "An error occurred while checking availability" });
         }
     }
-        try
-        {
-            var employee = await _context.Employees.FindAsync(id);
-            if (employee == null)
-            {
-                return NotFound(new { error = "Employee not found" });
-            }
-
-            employee.Name = request.Name;
-            employee.MonthlySalary = request.MonthlySalary;
-            employee.MonthlyWorkHours = request.MonthlyWorkHours;
-            employee.Position = request.Position;
-            employee.Department = request.Department;
-
-            await _context.SaveChangesAsync();
-
-            _logger.LogInformation("Employee updated: {EmployeeId}", id);
-
-            return Ok(new { message = "Employee updated successfully" });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error updating employee {EmployeeId}", id);
-            return StatusCode(500, new { error = "An error occurred while updating the employee" });
-        }
-    }
 
     [HttpPost("{id}/deactivate")]
     [Authorize(Roles = "RH")]
