@@ -141,20 +141,18 @@ export function AttendancePage() {
             
             <div className="flex flex-col sm:flex-row gap-3">
               <Button
-                variant="primary"
                 size="lg"
                 onClick={() => setShowAddModal(true)}
                 disabled={!selectedEmployeeId}
-                className="w-full sm:w-auto"
+                className="w-full sm:w-auto bg-blue-700 hover:bg-blue-800 text-white font-semibold"
               >
                 <Plus className="h-5 w-5 mr-2" />
                 Lançar Frequência Individual
               </Button>
               <Button
-                variant="outline"
                 size="lg"
                 onClick={() => setShowBatchModal(true)}
-                className="w-full sm:w-auto"
+                className="w-full sm:w-auto bg-green-700 hover:bg-green-800 text-white font-semibold"
               >
                 <Upload className="h-5 w-5 mr-2" />
                 Lançamento em Lote
@@ -516,69 +514,161 @@ function AttendanceModal({ employees, selectedEmployeeId, onClose, onSubmit, isL
   );
 }
 
-// Batch Attendance Modal Component (Simplified)
+// Batch Attendance Modal Component
 function BatchAttendanceModal({ employees, onClose, onSubmit, isLoading }) {
-  const [selectedDate, setSelectedDate] = useState('');
-  const [selectedEmployees, setSelectedEmployees] = useState([]);
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedEmployee, setSelectedEmployee] = useState('');
+  const [attendanceRecords, setAttendanceRecords] = useState([]);
+
+  // Generate days for selected month
+  const getDaysInMonth = (month, year) => {
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const days = [];
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(year, month - 1, day);
+      days.push({
+        date: `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
+        day,
+        entryTime: '08:00',
+        exitTime: '17:00',
+        isAbsent: false,
+      });
+    }
+    return days;
+  };
+
+  React.useEffect(() => {
+    setAttendanceRecords(getDaysInMonth(selectedMonth, selectedYear));
+  }, [selectedMonth, selectedYear]);
+
+  const handleRecordChange = (index, field, value) => {
+    const updated = [...attendanceRecords];
+    updated[index] = { ...updated[index], [field]: value };
+    setAttendanceRecords(updated);
+  };
 
   const handleBatchSubmit = () => {
-    const batchData = selectedEmployees.map(empId => ({
-      employeeId: empId,
-      date: selectedDate,
-      hoursWorked: 8,
-      overtimeHours50: 0,
-      overtimeHours100: 0,
-      absences: 0,
-    }));
+    if (!selectedEmployee) {
+      alert('Selecione um funcionário');
+      return;
+    }
+
+    const batchData = attendanceRecords
+      .filter(record => !record.isAbsent && record.entryTime && record.exitTime)
+      .map(record => ({
+        employeeId: selectedEmployee,
+        date: record.date,
+        entryTime: record.entryTime,
+        exitTime: record.exitTime,
+        isAbsent: false,
+        overtimeHours: 0,
+        doubleTimeHours: 0,
+      }));
+
     onSubmit(batchData);
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="px-6 py-4 border-b border-gray-200">
           <h2 className="text-xl font-semibold text-gray-900">Lançamento em Lote</h2>
         </div>
         
         <div className="p-6 space-y-4">
-          <Input
-            type="date"
-            label="Data"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-          />
-
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Selecione os Funcionários
-            </label>
-            <div className="border border-gray-300 rounded-lg max-h-60 overflow-y-auto p-2">
-              {employees.map((emp) => (
-                <label key={emp.id} className="flex items-center py-2 px-3 hover:bg-gray-50 rounded cursor-pointer">
-                  <input
-                    type="checkbox"
-                    value={emp.id}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setSelectedEmployees([...selectedEmployees, emp.id]);
-                      } else {
-                        setSelectedEmployees(selectedEmployees.filter(id => id !== emp.id));
-                      }
-                    }}
-                    className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                  />
-                  <span className="ml-3 text-sm text-gray-700">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Funcionário *</label>
+              <Select
+                value={selectedEmployee}
+                onChange={(e) => setSelectedEmployee(e.target.value)}
+              >
+                <option value="">Selecione...</option>
+                {employees.map((emp) => (
+                  <option key={emp.id} value={emp.id}>
                     {emp.name} - {emp.department}
-                  </span>
-                </label>
-              ))}
+                  </option>
+                ))}
+              </Select>
             </div>
-            <p className="text-xs text-gray-500">
-              {selectedEmployees.length} funcionário(s) selecionado(s)
-            </p>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Mês</label>
+              <Select
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(Number(e.target.value))}
+              >
+                {[...Array(12)].map((_, i) => (
+                  <option key={i + 1} value={i + 1}>
+                    {new Date(2026, i, 1).toLocaleDateString('pt-BR', { month: 'long' })}
+                  </option>
+                ))}
+              </Select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Ano</label>
+              <Select
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(Number(e.target.value))}
+              >
+                <option value={2024}>2024</option>
+                <option value={2025}>2025</option>
+                <option value={2026}>2026</option>
+              </Select>
+            </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-4">
+          <div className="border border-gray-300 rounded-lg max-h-96 overflow-y-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50 sticky top-0">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">Data</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">Entrada</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">Saída</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">Ausente</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {attendanceRecords.map((record, index) => (
+                  <tr key={index} className={record.isAbsent ? 'bg-red-50' : ''}>
+                    <td className="px-4 py-3 text-sm">
+                      {new Date(record.date).toLocaleDateString('pt-BR')}
+                    </td>
+                    <td className="px-4 py-3">
+                      <Input
+                        type="time"
+                        value={record.entryTime}
+                        onChange={(e) => handleRecordChange(index, 'entryTime', e.target.value)}
+                        disabled={record.isAbsent}
+                        className="w-32"
+                      />
+                    </td>
+                    <td className="px-4 py-3">
+                      <Input
+                        type="time"
+                        value={record.exitTime}
+                        onChange={(e) => handleRecordChange(index, 'exitTime', e.target.value)}
+                        disabled={record.isAbsent}
+                        className="w-32"
+                      />
+                    </td>
+                    <td className="px-4 py-3">
+                      <input
+                        type="checkbox"
+                        checked={record.isAbsent}
+                        onChange={(e) => handleRecordChange(index, 'isAbsent', e.target.checked)}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
             <Button
               type="button"
               variant="outline"
@@ -589,12 +679,12 @@ function BatchAttendanceModal({ employees, onClose, onSubmit, isLoading }) {
             </Button>
             <Button
               type="button"
-              variant="primary"
               onClick={handleBatchSubmit}
               loading={isLoading}
-              disabled={!selectedDate || selectedEmployees.length === 0}
+              disabled={!selectedEmployee}
+              className="bg-green-700 hover:bg-green-800 text-white font-semibold"
             >
-              Registrar Lote
+              Salvar Lançamentos
             </Button>
           </div>
         </div>
