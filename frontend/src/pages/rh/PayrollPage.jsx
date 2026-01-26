@@ -18,6 +18,8 @@ export function PayrollPage() {
   const [selectedEmployeeIds, setSelectedEmployeeIds] = useState([]);
   const [showEmployeeSelector, setShowEmployeeSelector] = useState(false);
   const [selectAllEmployees, setSelectAllEmployees] = useState(false);
+  const [includeDoubleTime, setIncludeDoubleTime] = useState(true);
+  const [includeOvertime, setIncludeOvertime] = useState(true);
   const { showToast } = useToast();
   const queryClient = useQueryClient();
 
@@ -73,7 +75,23 @@ export function PayrollPage() {
       employeeIds,
       cycleType: selectedCycle,
       referenceDate,
+      includeOvertime,
+      includeDoubleTime
     });
+  };
+
+  // Selection helpers
+  const visibleEmployeeIds = Array.from(new Set(payrolls.map(p => p.employeeId)));
+  const allVisibleSelected = visibleEmployeeIds.length > 0 && visibleEmployeeIds.every(id => selectedEmployeeIds.includes(id));
+
+  const handleToggleSelectAll = () => {
+    if (allVisibleSelected) {
+      setSelectedEmployeeIds(prev => prev.filter(id => !visibleEmployeeIds.includes(id)));
+      setSelectAllEmployees(false);
+    } else {
+      setSelectedEmployeeIds(prev => Array.from(new Set([...prev, ...visibleEmployeeIds])));
+      setSelectAllEmployees(true);
+    }
   };
 
   // Stats
@@ -226,6 +244,25 @@ export function PayrollPage() {
                       />
                       <span className="text-sm">Selecionar todos os ativos</span>
                     </label>
+
+                    <label className="flex items-center gap-2 mb-2">
+                      <input
+                        type="checkbox"
+                        checked={includeOvertime}
+                        onChange={(e) => setIncludeOvertime(e.target.checked)}
+                      />
+                      <span className="text-sm">Incluir horas extras</span>
+                    </label>
+
+                    <label className="flex items-center gap-2 mb-2">
+                      <input
+                        type="checkbox"
+                        checked={includeDoubleTime}
+                        onChange={(e) => setIncludeDoubleTime(e.target.checked)}
+                      />
+                      <span className="text-sm">Incluir dobras</span>
+                    </label>
+
                     {employees.map(emp => (
                       <label key={emp.id} className="flex items-center gap-2 py-1">
                         <input
@@ -277,6 +314,14 @@ export function PayrollPage() {
               <Table>
                 <thead>
                   <tr>
+                    <th className="w-10">
+                      <input
+                        type="checkbox"
+                        checked={allVisibleSelected}
+                        onChange={handleToggleSelectAll}
+                        aria-label="Selecionar todos"
+                      />
+                    </th>
                     <th>Funcionário</th>
                     <th>Período</th>
                     <th>Ciclo</th>
@@ -291,6 +336,22 @@ export function PayrollPage() {
                 <tbody>
                   {payrolls.map((payroll) => (
                     <tr key={payroll.id}>
+                      <td className="w-10">
+                        <input
+                          type="checkbox"
+                          checked={selectedEmployeeIds.includes(payroll.employeeId)}
+                          onChange={(e) => {
+                            const checked = e.target.checked;
+                            setSelectedEmployeeIds(prev => {
+                              const next = checked ? Array.from(new Set([...prev, payroll.employeeId])) : prev.filter(id => id !== payroll.employeeId);
+                              const visibleIds = Array.from(new Set(payrolls.map(p => p.employeeId)));
+                              setSelectAllEmployees(visibleIds.every(id => next.includes(id)));
+                              return next;
+                            });
+                          }}
+                          aria-label={`Selecionar funcionário ${payroll.employeeId}`}
+                        />
+                      </td>
                       <td className="font-medium">
                         {employees.find(e => e.id === payroll.employeeId)?.name || 'N/A'}
                       </td>

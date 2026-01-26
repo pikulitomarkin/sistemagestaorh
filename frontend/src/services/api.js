@@ -197,9 +197,9 @@ export const payrollService = {
     return response.data;
   },
 
-  processCycle: async ({ employeeIds, cycleType, referenceDate }) => {
-    // Sends selected employee IDs along with cycle info to the API
-    const payload = { EmployeeIds: employeeIds, CycleType: cycleType, ReferenceDate: referenceDate };
+  processCycle: async ({ employeeIds, cycleType, referenceDate, includeOvertime = true, includeDoubleTime = true }) => {
+    // Sends selected employee IDs along with cycle info and flags to the API
+    const payload = { EmployeeIds: employeeIds, CycleType: cycleType, ReferenceDate: referenceDate, IncludeOvertime: includeOvertime, IncludeDoubleTime: includeDoubleTime };
     const response = await api.post('/payroll/process-cycle', payload);
     return response.data;
   },
