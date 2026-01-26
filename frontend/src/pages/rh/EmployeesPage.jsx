@@ -118,9 +118,14 @@ export function EmployeesPage() {
       showToast('Funcionário cadastrado com sucesso', 'success');
       handleCloseModal();
     } catch (err) {
-      const message = err?.response?.data?.error || err?.message || 'Erro ao cadastrar funcionário';
+      const data = err?.response?.data;
+      let message;
+      if (!data) message = err?.message || 'Erro ao cadastrar funcionário';
+      else if (data.error) message = data.error;
+      else if (data.errors) message = Object.values(data.errors).flat().join(' ');
+      else message = JSON.stringify(data);
       showToast(message, 'error');
-      console.error('Failed to create employee', err);
+      console.error('Failed to create employee', err, data);
     }
   };
 

@@ -26,7 +26,7 @@ const employeeSchema = z.object({
   monthlyWorkHours: z.number().min(1, 'Horas mensais obrigatórias'),
   hireDate: z.string(),
   username: z.string().min(3, 'Usuário deve ter no mínimo 3 caracteres'),
-  password: z.string().min(3, 'Senha deve ter no mínimo 3 caracteres'),
+  password: z.string().min(6, 'Senha deve ter no mínimo 6 caracteres'),
 });
 
 export function ManagerEmployeesPage() {
@@ -93,9 +93,9 @@ export function ManagerEmployeesPage() {
       handleCloseModal();
     },
     onError: (error) => {
-      const message = error?.response?.data?.message || error?.message || 'Erro ao salvar funcionário';
+      const message = getErrorMessage(error);
       showToast(message, 'error');
-      console.error('Failed to save employee', error);
+      console.error('Failed to save employee', error, error?.response?.data);
     },
   });
 
@@ -114,6 +114,28 @@ export function ManagerEmployeesPage() {
       setDeletingId(null);
     },
   });
+
+  const getErrorMessage = (err) => {
+    const data = err?.response?.data;
+    if (!data) return err?.message || 'Erro ao processar requisição';
+    if (typeof data === 'string') return data;
+    if (data.error) return data.error;
+    if (data.message) return data.message;
+    if (data.errors) {
+      // ValidationProblemDetails style
+      const vals = Object.values(data.errors).flat();
+      if (vals.length) return vals.join(' ');
+    }
+    // Generic object -> gather strings
+    const vals = [];
+    for (const k in data) {
+      const v = data[k];
+      if (Array.isArray(v)) vals.push(...v);
+      else if (typeof v === 'string') vals.push(v);
+    }
+    if (vals.length) return vals.join(' ');
+    return JSON.stringify(data);
+  };
 
   const handleDelete = (employee) => {
     if (window.confirm(`Tem certeza que deseja excluir ${employee.name}?\n\nEsta ação não pode ser desfeita.`)) {
