@@ -201,11 +201,12 @@ public class AttendanceController : ControllerBase
                 return BadRequest(ModelState);
             }
 
+            var username = User.FindFirst(ClaimTypes.Name)?.Value;
+
             // Security check: Colaboradores can only create their own records
             var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
             if (userRole == "Colaborador")
             {
-                var username = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value;
                 var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
                 if (user == null) return Unauthorized();
                 
@@ -231,8 +232,6 @@ public class AttendanceController : ControllerBase
             {
                 return BadRequest(new { error = "Attendance record already exists for this date" });
             }
-
-            var username = User.FindFirst(ClaimTypes.Name)?.Value;
 
             var attendance = new Attendance
             {
