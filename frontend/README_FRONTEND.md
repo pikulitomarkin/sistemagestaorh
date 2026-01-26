@@ -48,6 +48,11 @@
 - Modal de Lançamento em Lote (batch)
 - Exportação de dados
 
+#### 4. **PayrollPage** (`/rh/payroll`)
+- Processamento de folha por período (Mês/Ano/Ciclo)
+- **Lançamento em lote com seleção múltipla de funcionários** (RH)
+- Exportar holerites e visualizar status de processamento
+
 #### 4. **PayslipComponent** (Modal/Componente)
 - Header com dados do funcionário
 - 3 Cards resumo (Salário Base, Proventos, Descontos)
@@ -70,7 +75,7 @@
 - ✅ **authService** - login, logout, getCurrentUser
 - ✅ **employeeService** - getAll, getById, create, update, delete, getStatistics
 - ✅ **attendanceService** - getAll, create, createBatch, getByCycle, getByEmployee
-- ✅ **payrollService** - getAll, calculate, processBatch, getPayslip, getAnalytics
+- ✅ **payrollService** - getAll, calculate, processBatch, processCycle (batch com employeeIds), getPayslip, getAnalytics
 
 ### 📊 Estado e Cache
 
