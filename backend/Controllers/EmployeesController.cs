@@ -214,6 +214,65 @@ public class EmployeesController : ControllerBase
     {
         try
         {
+            // Allow updating user and employee, but ensure CPF/username uniqueness is handled elsewhere
+            var employee = await _context.Employees.FindAsync(id);
+            if (employee == null)
+            {
+                return NotFound(new { error = "Employee not found" });
+            }
+
+            employee.Name = request.Name;
+            employee.MonthlySalary = request.MonthlySalary;
+            employee.MonthlyWorkHours = request.MonthlyWorkHours;
+            employee.Position = request.Position;
+            employee.Department = request.Department;
+
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Employee updated: {EmployeeId}", id);
+
+            return Ok(new { message = "Employee updated successfully" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating employee {EmployeeId}", id);
+            return StatusCode(500, new { error = "An error occurred while updating the employee" });
+        }
+    }
+
+    [HttpGet("check")]
+    [Authorize(Roles = "RH,Gerente")]
+    public async Task<IActionResult> CheckAvailability([FromQuery] string? cpf, [FromQuery] string? username)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(cpf) && string.IsNullOrEmpty(username))
+            {
+                return BadRequest(new { error = "cpf or username query param required" });
+            }
+
+            if (!string.IsNullOrEmpty(cpf))
+            {
+                var exists = await _context.Employees.AnyAsync(e => e.CPF == cpf);
+                return Ok(new { field = "cpf", available = !exists, message = exists ? "CPF already registered" : null });
+            }
+
+            if (!string.IsNullOrEmpty(username))
+            {
+                var exists = await _context.Users.AnyAsync(u => u.Username == username);
+                return Ok(new { field = "username", available = !exists, message = exists ? "Username already exists" : null });
+            }
+
+            return BadRequest(new { error = "invalid request" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error checking availability");
+            return StatusCode(500, new { error = "An error occurred while checking availability" });
+        }
+    }
+        try
+        {
             var employee = await _context.Employees.FindAsync(id);
             if (employee == null)
             {
