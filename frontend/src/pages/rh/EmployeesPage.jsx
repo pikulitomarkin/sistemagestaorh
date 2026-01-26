@@ -70,20 +70,26 @@ export function EmployeesPage() {
     },
   ];
 
+  const [deletingId, setDeletingId] = useState(null);
+
   // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: employeeService.delete,
     onSuccess: () => {
       queryClient.invalidateQueries(['employees']);
       showToast('Funcionário removido com sucesso', 'success');
+      setDeletingId(null);
     },
-    onError: () => {
-      showToast('Erro ao remover funcionário', 'error');
+    onError: (error) => {
+      const message = error?.message || 'Erro ao remover funcionário';
+      showToast(message, 'error');
+      setDeletingId(null);
     },
   });
 
   const handleDelete = (id) => {
     if (window.confirm('Tem certeza que deseja remover este funcionário?')) {
+      setDeletingId(id);
       deleteMutation.mutate(id);
     }
   };
@@ -247,9 +253,10 @@ export function EmployeesPage() {
                           <button
                             onClick={() => handleDelete(employee.id)}
                             className="text-red-600 hover:text-red-800"
-                            title="Remover"
+                            title={deletingId === employee.id ? 'Removendo...' : 'Remover'}
+                            disabled={deletingId === employee.id}
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className={`w-4 h-4 ${deletingId === employee.id ? 'animate-spin' : ''}`} />
                           </button>
                         </div>
                       </td>

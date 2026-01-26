@@ -268,7 +268,7 @@ public class EmployeesController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Roles = "RH")]
+    [Authorize(Roles = "RH,Gerente")]
     public async Task<IActionResult> DeleteEmployee(int id)
     {
         try

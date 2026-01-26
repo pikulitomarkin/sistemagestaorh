@@ -95,20 +95,25 @@ export function ManagerEmployeesPage() {
     },
   });
 
+  const [deletingId, setDeletingId] = useState(null);
+
   // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: employeeService.delete,
     onSuccess: () => {
       queryClient.invalidateQueries(['employees']);
       showToast('Funcionário excluído com sucesso', 'success');
+      setDeletingId(null);
     },
     onError: (error) => {
-      showToast(error.response?.data?.message || 'Erro ao excluir funcionário', 'error');
+      showToast(error.response?.data?.message || error?.message || 'Erro ao excluir funcionário', 'error');
+      setDeletingId(null);
     },
   });
 
   const handleDelete = (employee) => {
     if (window.confirm(`Tem certeza que deseja excluir ${employee.name}?\n\nEsta ação não pode ser desfeita.`)) {
+      setDeletingId(employee.id);
       deleteMutation.mutate(employee.id);
     }
   };
@@ -219,11 +224,17 @@ export function ManagerEmployeesPage() {
                             size="sm"
                             variant="outline"
                             onClick={() => handleDelete(employee)}
-                            disabled={deleteMutation.isPending}
+                            disabled={deletingId === employee.id}
                             className="text-red-600 hover:text-red-700 hover:border-red-300"
                           >
-                            <Trash2 className="w-4 h-4 mr-1" />
-                            Excluir
+                            {deletingId === employee.id ? (
+                              'Removendo...'
+                            ) : (
+                              <>
+                                <Trash2 className="w-4 h-4 mr-1" />
+                                Excluir
+                              </>
+                            )}
                           </Button>
                         </div>
                       </td>
