@@ -42,11 +42,14 @@ export function useToast() {
     throw new Error('useToast must be used within a ToastProvider');
   }
   
+  const showToast = (message, type = 'info') => context.addToast(message, type);
+
   return {
     success: (message) => context.addToast(message, 'success'),
     error: (message) => context.addToast(message, 'error'),
     warning: (message) => context.addToast(message, 'warning'),
     info: (message) => context.addToast(message, 'info'),
+    showToast,
   };
 }
 
