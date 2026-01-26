@@ -520,7 +520,9 @@ function AttendanceModal({ employees, selectedEmployeeId, onClose, onSubmit, isL
 function BatchAttendanceModal({ employees, onClose, onSubmit, isLoading }) {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [selectedEmployee, setSelectedEmployee] = useState('');
+  const [selectedEmployeeIds, setSelectedEmployeeIds] = useState([]);
+  const [showEmployeeSelector, setShowEmployeeSelector] = useState(false);
+  const [selectAllEmployees, setSelectAllEmployees] = useState(false);
   const [attendanceRecords, setAttendanceRecords] = useState([]);
 
   // Generate days for selected month
@@ -551,27 +553,34 @@ function BatchAttendanceModal({ employees, onClose, onSubmit, isLoading }) {
   };
 
   const handleBatchSubmit = () => {
-    if (!selectedEmployee) {
-      alert('Selecione um funcionário');
+    if (!selectedEmployeeIds || selectedEmployeeIds.length === 0) {
+      alert('Selecione pelo menos um funcionário');
       return;
     }
 
-    const batchData = attendanceRecords
-      .filter(record => !record.isAbsent && record.entryTime && record.exitTime)
-      .map(record => ({
-        employeeId: Number(selectedEmployee),
-        date: record.date,
-        entryTime: record.entryTime,
-        exitTime: record.exitTime,
-        isAbsent: false,
-        hoursWorked: 8,
-        overtimeHours50: 0,
-        overtimeHours100: 0,
-        absences: 0,
-      }));
+    const rows = attendanceRecords.filter(record => !(record.isAbsent) && record.entryTime && record.exitTime);
+
+    const batchData = [];
+    selectedEmployeeIds.forEach(empId => {
+      rows.forEach(record => {
+        batchData.push({
+          employeeId: Number(empId),
+          date: record.date,
+          entryTime: record.entryTime,
+          exitTime: record.exitTime,
+          isAbsent: false,
+          hoursWorked: 8,
+          overtimeHours50: 0,
+          overtimeHours100: 0,
+          absences: 0,
+        });
+      });
+    });
 
     onSubmit(batchData);
   };
+
+  // ... later in JSX, change button disabled prop to use selectedEmployeeIds length (handled below)
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
@@ -583,18 +592,54 @@ function BatchAttendanceModal({ employees, onClose, onSubmit, isLoading }) {
         <div className="p-6 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Funcionário *</label>
-              <Select
-                value={selectedEmployee}
-                onChange={(e) => setSelectedEmployee(e.target.value)}
-              >
-                <option value="">Selecione...</option>
-                {employees.map((emp) => (
-                  <option key={emp.id} value={emp.id}>
-                    {emp.name} - {emp.department}
-                  </option>
-                ))}
-              </Select>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Funcionários *</label>
+              <div>
+                <button
+                  type="button"
+                  className="px-3 py-2 border rounded text-sm bg-white w-full text-left"
+                  onClick={() => setShowEmployeeSelector(!showEmployeeSelector)}
+                >
+                  Selecionar Funcionários ({selectedEmployeeIds.length || employees.filter(e => e.isActive).length})
+                </button>
+                {showEmployeeSelector && (
+                  <div className="mt-2 p-3 bg-white border rounded max-h-48 overflow-auto shadow">
+                    <label className="flex items-center gap-2 mb-2">
+                      <input
+                        type="checkbox"
+                        checked={selectAllEmployees}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setSelectAllEmployees(checked);
+                          if (checked) {
+                            setSelectedEmployeeIds(employees.filter(emp => emp.isActive).map(emp => emp.id));
+                          } else {
+                            setSelectedEmployeeIds([]);
+                          }
+                        }}
+                      />
+                      <span className="text-sm">Selecionar todos os ativos</span>
+                    </label>
+                    {employees.map((emp) => (
+                      <label key={emp.id} className="flex items-center gap-2 py-1">
+                        <input
+                          type="checkbox"
+                          checked={selectedEmployeeIds.includes(emp.id)}
+                          onChange={(e) => {
+                            const checked = e.target.checked;
+                            setSelectedEmployeeIds(prev => {
+                              const next = checked ? Array.from(new Set([...prev, emp.id])) : prev.filter(id => id !== emp.id);
+                              const activeCount = employees.filter(x => x.isActive).length;
+                              setSelectAllEmployees(next.length === activeCount);
+                              return next;
+                            });
+                          }}
+                        />
+                        <span className="text-sm">{emp.name} - {emp.department} {emp.isActive ? '' : '(inativo)'}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div>
@@ -685,7 +730,7 @@ function BatchAttendanceModal({ employees, onClose, onSubmit, isLoading }) {
               type="button"
               onClick={handleBatchSubmit}
               loading={isLoading}
-              disabled={!selectedEmployee}
+              disabled={selectedEmployeeIds.length === 0}
               className="bg-green-700 hover:bg-green-800 text-white font-semibold"
             >
               Salvar Lançamentos
