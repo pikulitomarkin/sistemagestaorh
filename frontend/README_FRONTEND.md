@@ -50,7 +50,7 @@
 
 #### 4. **PayrollPage** (`/rh/payroll`)
 - Processamento de folha por período (Mês/Ano/Ciclo)
-- **Lançamento em lote com seleção múltipla de funcionários** (RH)
+- **Lançamento em lote com seleção múltipla de funcionários** (RH) — incluir opção para **do bras** e horas extras
 - Exportar holerites e visualizar status de processamento
 
 #### 4. **PayslipComponent** (Modal/Componente)
