@@ -687,17 +687,9 @@ function BatchAttendanceModal({ employees, onClose, onSubmit, isLoading }) {
                 onChange={(e) => {
                   const v = e.target.value || '00:00';
                   setDefaultEntryTime(v);
-                  // Apply to all rows (helps quick entry)
-                  applyDefaultEntryExitToAll(v, defaultExitTime);
-                }}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Saída padrão</label>
-              <input
-                type="time"
-                className="w-full px-3 py-2 border rounded"
+                  // Make default exit equal to entry by default for quick launch
+                  setDefaultExitTime(v);
+                  applyDefaultEntryExitToAll(v, v);
                 value={defaultExitTime}
                 onChange={(e) => {
                   const v = e.target.value || '00:00';
@@ -761,6 +753,15 @@ function BatchAttendanceModal({ employees, onClose, onSubmit, isLoading }) {
                         type="time"
                         value={record.entryTime}
                         onChange={(e) => handleRecordChange(index, 'entryTime', e.target.value)}
+                        disabled={record.isAbsent}
+                        className="w-32"
+                      />
+                    </td>
+                    <td className="px-4 py-3">
+                      <Input
+                        type="time"
+                        value={record.exitTime}
+                        onChange={(e) => handleRecordChange(index, 'exitTime', e.target.value)}
                         disabled={record.isAbsent}
                         className="w-32"
                       />
