@@ -145,7 +145,7 @@ export const attendanceService = {
   },
   
   createBatch: async (dataArray) => {
-    const response = await api.post('/attendance/batch', dataArray);
+    const response = await api.post('/attendance/bulk', dataArray);
     return response.data;
   },
   
