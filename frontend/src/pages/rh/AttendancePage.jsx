@@ -523,6 +523,8 @@ function BatchAttendanceModal({ employees, onClose, onSubmit, isLoading }) {
   const [selectedEmployeeIds, setSelectedEmployeeIds] = useState([]);
   const [showEmployeeSelector, setShowEmployeeSelector] = useState(true);
   const [selectAllEmployees, setSelectAllEmployees] = useState(false);
+  const [defaultEntryTime, setDefaultEntryTime] = useState('08:00');
+  const [defaultExitTime, setDefaultExitTime] = useState('08:00');
   const [defaultOvertime50, setDefaultOvertime50] = useState(0);
   const [defaultOvertime100, setDefaultOvertime100] = useState(0);
   const [attendanceRecords, setAttendanceRecords] = useState([]);
@@ -536,11 +538,11 @@ function BatchAttendanceModal({ employees, onClose, onSubmit, isLoading }) {
       days.push({
         date: `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
         day,
-        entryTime: '08:00',
-        exitTime: '17:00',
+        entryTime: defaultEntryTime,
+        exitTime: defaultExitTime,
         isAbsent: false,
-        overtimeHours50: 0,
-        overtimeHours100: 0,
+        overtimeHours50: defaultOvertime50,
+        overtimeHours100: defaultOvertime100,
       });
     }
     return days;
@@ -552,8 +554,21 @@ function BatchAttendanceModal({ employees, onClose, onSubmit, isLoading }) {
 
   const handleRecordChange = (index, field, value) => {
     const updated = [...attendanceRecords];
-    updated[index] = { ...updated[index], [field]: value };
+    // If user changes entry time, update exit time to match it (quick entry UX)
+    if (field === 'entryTime') {
+      updated[index] = { ...updated[index], entryTime: value, exitTime: value };
+    } else {
+      updated[index] = { ...updated[index], [field]: value };
+    }
     setAttendanceRecords(updated);
+  };
+
+  const applyDefaultEntryExitToAll = (entry, exit) => {
+    setAttendanceRecords(prev => prev.map(r => ({ ...r, entryTime: entry, exitTime: exit })));
+  };
+
+  const applyDefaultOvertimesToAll = (o50, o100) => {
+    setAttendanceRecords(prev => prev.map(r => ({ ...r, overtimeHours50: o50, overtimeHours100: o100 })));
   };
 
   const handleBatchSubmit = () => {
@@ -594,7 +609,7 @@ function BatchAttendanceModal({ employees, onClose, onSubmit, isLoading }) {
         </div>
         
         <div className="p-6 space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Funcionários *</label>
               <div>
@@ -664,6 +679,35 @@ function BatchAttendanceModal({ employees, onClose, onSubmit, isLoading }) {
             </div>
 
             <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Entrada padrão</label>
+              <input
+                type="time"
+                className="w-full px-3 py-2 border rounded"
+                value={defaultEntryTime}
+                onChange={(e) => {
+                  const v = e.target.value || '00:00';
+                  setDefaultEntryTime(v);
+                  // Apply to all rows (helps quick entry)
+                  applyDefaultEntryExitToAll(v, defaultExitTime);
+                }}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Saída padrão</label>
+              <input
+                type="time"
+                className="w-full px-3 py-2 border rounded"
+                value={defaultExitTime}
+                onChange={(e) => {
+                  const v = e.target.value || '00:00';
+                  setDefaultExitTime(v);
+                  applyDefaultEntryExitToAll(defaultEntryTime, v);
+                }}
+              />
+            </div>
+
+            <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Horas extras (50%) padrão</label>
               <input
                 type="number"
@@ -673,12 +717,12 @@ function BatchAttendanceModal({ employees, onClose, onSubmit, isLoading }) {
                 onChange={(e) => {
                   const v = Number(e.target.value) || 0;
                   setDefaultOvertime50(v);
-                  setAttendanceRecords(prev => prev.map(r => ({ ...r, overtimeHours50: v })));
+                  applyDefaultOvertimesToAll(v, defaultOvertime100);
                 }}
               />
             </div>
 
-            <div>
+            <div className="md:col-span-1">
               <label className="block text-sm font-medium text-gray-700 mb-1">Dobras (100%) padrão</label>
               <input
                 type="number"
@@ -688,7 +732,7 @@ function BatchAttendanceModal({ employees, onClose, onSubmit, isLoading }) {
                 onChange={(e) => {
                   const v = Number(e.target.value) || 0;
                   setDefaultOvertime100(v);
-                  setAttendanceRecords(prev => prev.map(r => ({ ...r, overtimeHours100: v })));
+                  applyDefaultOvertimesToAll(defaultOvertime50, v);
                 }}
               />
             </div>
