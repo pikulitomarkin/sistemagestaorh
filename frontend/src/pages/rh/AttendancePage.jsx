@@ -561,13 +561,12 @@ function BatchAttendanceModal({ employees, onClose, onSubmit, isLoading }) {
       .map(record => ({
         employeeId: Number(selectedEmployee),
         date: record.date,
-        entryTime: record.entryTime,
-        exitTime: record.exitTime,
+        entryTime: record.entryTime + ':00',
+        exitTime: record.exitTime + ':00',
         isAbsent: false,
-        hoursWorked: 8,
-        overtimeHours50: 0,
-        overtimeHours100: 0,
-        absences: 0,
+        overtimeHours: 0,
+        doubleTimeHours: 0,
+        notes: ''
       }));
 
     onSubmit(batchData);
