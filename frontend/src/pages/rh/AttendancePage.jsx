@@ -690,6 +690,15 @@ function BatchAttendanceModal({ employees, onClose, onSubmit, isLoading }) {
                   // Make default exit equal to entry by default for quick launch
                   setDefaultExitTime(v);
                   applyDefaultEntryExitToAll(v, v);
+                }}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Saída padrão</label>
+              <input
+                type="time"
+                className="w-full px-3 py-2 border rounded"
                 value={defaultExitTime}
                 onChange={(e) => {
                   const v = e.target.value || '00:00';
