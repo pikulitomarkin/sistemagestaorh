@@ -520,7 +520,7 @@ function AttendanceModal({ employees, selectedEmployeeId, onClose, onSubmit, isL
 function BatchAttendanceModal({ employees, onClose, onSubmit, isLoading }) {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [selectedEmployee, setSelectedEmployee] = useState('');
+  const [selectedEmployees, setSelectedEmployees] = useState([]);
   const [attendanceRecords, setAttendanceRecords] = useState([]);
 
   // Generate days for selected month
@@ -535,6 +535,8 @@ function BatchAttendanceModal({ employees, onClose, onSubmit, isLoading }) {
         entryTime: '08:00',
         exitTime: '17:00',
         isAbsent: false,
+        overtimeHours: 0,
+        doubleTimeHours: 0,
       });
     }
     return days;
@@ -550,52 +552,54 @@ function BatchAttendanceModal({ employees, onClose, onSubmit, isLoading }) {
     setAttendanceRecords(updated);
   };
 
+  const handleEmployeeToggle = (employeeId) => {
+    setSelectedEmployees(prev => 
+      prev.includes(employeeId) 
+        ? prev.filter(id => id !== employeeId)
+        : [...prev, employeeId]
+    );
+  };
+
+  const handleSelectAllEmployees = (checked) => {
+    setSelectedEmployees(checked ? employees.map(e => e.id) : []);
+  };
+
   const handleBatchSubmit = () => {
-    if (!selectedEmployee) {
-      alert('Selecione um funcionário');
+    if (selectedEmployees.length === 0) {
+      alert('Selecione pelo menos um funcionário');
       return;
     }
 
-    const batchData = attendanceRecords
-      .filter(record => !record.isAbsent && record.entryTime && record.exitTime)
-      .map(record => ({
-        employeeId: Number(selectedEmployee),
-        date: record.date,
-        entryTime: record.entryTime + ':00',
-        exitTime: record.exitTime + ':00',
-        isAbsent: false,
-        overtimeHours: 0,
-        doubleTimeHours: 0,
-        notes: ''
-      }));
+    const batchData = [];
+    selectedEmployees.forEach(employeeId => {
+      attendanceRecords
+        .filter(record => !record.isAbsent && record.entryTime && record.exitTime)
+        .forEach(record => {
+          batchData.push({
+            employeeId: Number(employeeId),
+            date: record.date,
+            entryTime: record.entryTime + ':00',
+            exitTime: record.exitTime + ':00',
+            isAbsent: false,
+            overtimeHours: Number(record.overtimeHours) || 0,
+            doubleTimeHours: Number(record.doubleTimeHours) || 0,
+            notes: ''
+          });
+        });
+    });
 
     onSubmit(batchData);
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-lg shadow-xl max-w-7xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="px-6 py-4 border-b border-gray-200">
           <h2 className="text-xl font-semibold text-gray-900">Lançamento em Lote</h2>
         </div>
         
         <div className="p-6 space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Funcionário *</label>
-              <Select
-                value={selectedEmployee}
-                onChange={(e) => setSelectedEmployee(e.target.value)}
-              >
-                <option value="">Selecione...</option>
-                {employees.map((emp) => (
-                  <option key={emp.id} value={emp.id}>
-                    {emp.name} - {emp.department}
-                  </option>
-                ))}
-              </Select>
-            </div>
-
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Mês</label>
               <Select
@@ -623,6 +627,37 @@ function BatchAttendanceModal({ employees, onClose, onSubmit, isLoading }) {
             </div>
           </div>
 
+          {/* Seleção de Funcionários */}
+          <div className="border border-gray-300 rounded-lg p-4">
+            <div className="flex items-center justify-between mb-3">
+              <label className="text-sm font-medium text-gray-700">
+                Funcionários * ({selectedEmployees.length} selecionados)
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={selectedEmployees.length === employees.length}
+                  onChange={(e) => handleSelectAllEmployees(e.target.checked)}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                Selecionar Todos
+              </label>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 max-h-40 overflow-y-auto">
+              {employees.map((emp) => (
+                <label key={emp.id} className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={selectedEmployees.includes(emp.id)}
+                    onChange={() => handleEmployeeToggle(emp.id)}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <span className="text-sm">{emp.name} - {emp.department}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
           <div className="border border-gray-300 rounded-lg max-h-96 overflow-y-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50 sticky top-0">
@@ -630,6 +665,8 @@ function BatchAttendanceModal({ employees, onClose, onSubmit, isLoading }) {
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">Data</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">Entrada</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">Saída</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">HE 50%</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">HE 100%</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">Ausente</th>
                 </tr>
               </thead>
@@ -655,6 +692,30 @@ function BatchAttendanceModal({ employees, onClose, onSubmit, isLoading }) {
                         onChange={(e) => handleRecordChange(index, 'exitTime', e.target.value)}
                         disabled={record.isAbsent}
                         className="w-32"
+                      />
+                    </td>
+                    <td className="px-4 py-3">
+                      <Input
+                        type="number"
+                        min="0"
+                        max="12"
+                        step="0.5"
+                        value={record.overtimeHours}
+                        onChange={(e) => handleRecordChange(index, 'overtimeHours', e.target.value)}
+                        disabled={record.isAbsent}
+                        className="w-20"
+                      />
+                    </td>
+                    <td className="px-4 py-3">
+                      <Input
+                        type="number"
+                        min="0"
+                        max="12"
+                        step="0.5"
+                        value={record.doubleTimeHours}
+                        onChange={(e) => handleRecordChange(index, 'doubleTimeHours', e.target.value)}
+                        disabled={record.isAbsent}
+                        className="w-20"
                       />
                     </td>
                     <td className="px-4 py-3">
@@ -684,10 +745,10 @@ function BatchAttendanceModal({ employees, onClose, onSubmit, isLoading }) {
               type="button"
               onClick={handleBatchSubmit}
               loading={isLoading}
-              disabled={!selectedEmployee}
+              disabled={selectedEmployees.length === 0}
               className="bg-green-700 hover:bg-green-800 text-white font-semibold"
             >
-              Salvar Lançamentos
+              Salvar Lançamentos ({selectedEmployees.length} funcionário{selectedEmployees.length !== 1 ? 's' : ''})
             </Button>
           </div>
         </div>
