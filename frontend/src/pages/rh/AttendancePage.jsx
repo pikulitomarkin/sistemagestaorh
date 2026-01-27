@@ -521,8 +521,10 @@ function BatchAttendanceModal({ employees, onClose, onSubmit, isLoading }) {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedEmployeeIds, setSelectedEmployeeIds] = useState([]);
-  const [showEmployeeSelector, setShowEmployeeSelector] = useState(false);
+  const [showEmployeeSelector, setShowEmployeeSelector] = useState(true);
   const [selectAllEmployees, setSelectAllEmployees] = useState(false);
+  const [defaultOvertime50, setDefaultOvertime50] = useState(0);
+  const [defaultOvertime100, setDefaultOvertime100] = useState(0);
   const [attendanceRecords, setAttendanceRecords] = useState([]);
 
   // Generate days for selected month
@@ -537,6 +539,8 @@ function BatchAttendanceModal({ employees, onClose, onSubmit, isLoading }) {
         entryTime: '08:00',
         exitTime: '17:00',
         isAbsent: false,
+        overtimeHours50: 0,
+        overtimeHours100: 0,
       });
     }
     return days;
@@ -570,8 +574,8 @@ function BatchAttendanceModal({ employees, onClose, onSubmit, isLoading }) {
           exitTime: record.exitTime,
           isAbsent: false,
           hoursWorked: 8,
-          overtimeHours50: 0,
-          overtimeHours100: 0,
+          overtimeHours50: record.overtimeHours50 || 0,
+          overtimeHours100: record.overtimeHours100 || 0,
           absences: 0,
         });
       });
@@ -590,55 +594,46 @@ function BatchAttendanceModal({ employees, onClose, onSubmit, isLoading }) {
         </div>
         
         <div className="p-6 space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Funcionários *</label>
               <div>
-                <button
-                  type="button"
-                  className="px-3 py-2 border rounded text-sm bg-white w-full text-left"
-                  onClick={() => setShowEmployeeSelector(!showEmployeeSelector)}
-                >
-                  Selecionar Funcionários ({selectedEmployeeIds.length || employees.filter(e => e.isActive).length})
-                </button>
-                {showEmployeeSelector && (
-                  <div className="mt-2 p-3 bg-white border rounded max-h-48 overflow-auto shadow">
-                    <label className="flex items-center gap-2 mb-2">
+                <div className="mt-2 p-3 bg-white border rounded max-h-48 overflow-auto shadow">
+                  <label className="flex items-center gap-2 mb-2">
+                    <input
+                      type="checkbox"
+                      checked={selectAllEmployees}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        setSelectAllEmployees(checked);
+                        if (checked) {
+                          setSelectedEmployeeIds(employees.filter(emp => emp.isActive).map(emp => emp.id));
+                        } else {
+                          setSelectedEmployeeIds([]);
+                        }
+                      }}
+                    />
+                    <span className="text-sm">Selecionar todos os ativos</span>
+                  </label>
+                  {employees.map((emp) => (
+                    <label key={emp.id} className="flex items-center gap-2 py-1">
                       <input
                         type="checkbox"
-                        checked={selectAllEmployees}
+                        checked={selectedEmployeeIds.includes(emp.id)}
                         onChange={(e) => {
                           const checked = e.target.checked;
-                          setSelectAllEmployees(checked);
-                          if (checked) {
-                            setSelectedEmployeeIds(employees.filter(emp => emp.isActive).map(emp => emp.id));
-                          } else {
-                            setSelectedEmployeeIds([]);
-                          }
+                          setSelectedEmployeeIds(prev => {
+                            const next = checked ? Array.from(new Set([...prev, emp.id])) : prev.filter(id => id !== emp.id);
+                            const activeCount = employees.filter(x => x.isActive).length;
+                            setSelectAllEmployees(next.length === activeCount);
+                            return next;
+                          });
                         }}
                       />
-                      <span className="text-sm">Selecionar todos os ativos</span>
+                      <span className="text-sm">{emp.name} - {emp.department} {emp.isActive ? '' : '(inativo)'}</span>
                     </label>
-                    {employees.map((emp) => (
-                      <label key={emp.id} className="flex items-center gap-2 py-1">
-                        <input
-                          type="checkbox"
-                          checked={selectedEmployeeIds.includes(emp.id)}
-                          onChange={(e) => {
-                            const checked = e.target.checked;
-                            setSelectedEmployeeIds(prev => {
-                              const next = checked ? Array.from(new Set([...prev, emp.id])) : prev.filter(id => id !== emp.id);
-                              const activeCount = employees.filter(x => x.isActive).length;
-                              setSelectAllEmployees(next.length === activeCount);
-                              return next;
-                            });
-                          }}
-                        />
-                        <span className="text-sm">{emp.name} - {emp.department} {emp.isActive ? '' : '(inativo)'}</span>
-                      </label>
-                    ))}
-                  </div>
-                )}
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -667,6 +662,36 @@ function BatchAttendanceModal({ employees, onClose, onSubmit, isLoading }) {
                 <option value={2026}>2026</option>
               </Select>
             </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Horas extras (50%) padrão</label>
+              <input
+                type="number"
+                min="0"
+                className="w-full px-3 py-2 border rounded"
+                value={defaultOvertime50}
+                onChange={(e) => {
+                  const v = Number(e.target.value) || 0;
+                  setDefaultOvertime50(v);
+                  setAttendanceRecords(prev => prev.map(r => ({ ...r, overtimeHours50: v })));
+                }}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Dobras (100%) padrão</label>
+              <input
+                type="number"
+                min="0"
+                className="w-full px-3 py-2 border rounded"
+                value={defaultOvertime100}
+                onChange={(e) => {
+                  const v = Number(e.target.value) || 0;
+                  setDefaultOvertime100(v);
+                  setAttendanceRecords(prev => prev.map(r => ({ ...r, overtimeHours100: v })));
+                }}
+              />
+            </div>
           </div>
 
           <div className="border border-gray-300 rounded-lg max-h-96 overflow-y-auto">
@@ -676,6 +701,8 @@ function BatchAttendanceModal({ employees, onClose, onSubmit, isLoading }) {
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">Data</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">Entrada</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">Saída</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">Horas Extra (50%)</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">Dobras (100%)</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">Ausente</th>
                 </tr>
               </thead>
@@ -695,12 +722,25 @@ function BatchAttendanceModal({ employees, onClose, onSubmit, isLoading }) {
                       />
                     </td>
                     <td className="px-4 py-3">
-                      <Input
-                        type="time"
-                        value={record.exitTime}
-                        onChange={(e) => handleRecordChange(index, 'exitTime', e.target.value)}
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.5"
+                        value={record.overtimeHours50}
+                        onChange={(e) => handleRecordChange(index, 'overtimeHours50', Number(e.target.value) || 0)}
                         disabled={record.isAbsent}
-                        className="w-32"
+                        className="w-20 px-2 py-1 border rounded"
+                      />
+                    </td>
+                    <td className="px-4 py-3">
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.5"
+                        value={record.overtimeHours100}
+                        onChange={(e) => handleRecordChange(index, 'overtimeHours100', Number(e.target.value) || 0)}
+                        disabled={record.isAbsent}
+                        className="w-20 px-2 py-1 border rounded"
                       />
                     </td>
                     <td className="px-4 py-3">
