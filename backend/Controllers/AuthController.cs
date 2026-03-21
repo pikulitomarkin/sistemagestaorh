@@ -21,14 +21,14 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     public IActionResult Login([FromBody] LoginRequest request)
     {
-        Console.WriteLine($"Login attempt: {request.Username}, password length: {request.Password?.Length}");
-        var user = _context.Users.FirstOrDefault(u => u.Username == request.Username);
-        Console.WriteLine($"Login attempt: {request.Username}, user found: {user != null}");
-        if (user != null)
+        if (request == null || string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.Password))
         {
-            Console.WriteLine($"Password verify: {BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash)}");
+            return BadRequest(new { error = "Username and password are required" });
         }
-        if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+
+        var user = _context.Users.FirstOrDefault(u => u.Username == request.Username);
+
+        if (user == null || !ValidatePassword(user, request.Password))
             return Unauthorized();
 
         var employee = _context.Employees.FirstOrDefault(e => e.UserId == user.Id);
@@ -46,6 +46,30 @@ public class AuthController : ControllerBase
                 employeeId = employee?.Id
             }
         });
+    }
+
+    private bool ValidatePassword(User user, string rawPassword)
+    {
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(user.PasswordHash) && BCrypt.Net.BCrypt.Verify(rawPassword, user.PasswordHash))
+            {
+                return true;
+            }
+        }
+        catch
+        {
+            // Legacy rows may store plain text or invalid hash format.
+        }
+
+        if (!string.IsNullOrWhiteSpace(user.PasswordHash) && user.PasswordHash == rawPassword)
+        {
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(rawPassword);
+            _context.SaveChanges();
+            return true;
+        }
+
+        return false;
     }
 
     private string GenerateJwtToken(User user)
