@@ -96,7 +96,12 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-var runDbBootstrap = builder.Configuration.GetValue<bool?>("Database:RunMigrationsOnStartup") ?? !app.Environment.IsProduction();
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? string.Empty;
+var pointsToLocalDb = connectionString.Contains("localhost", StringComparison.OrdinalIgnoreCase) ||
+                      connectionString.Contains("127.0.0.1", StringComparison.OrdinalIgnoreCase);
+
+var runDbBootstrap = builder.Configuration.GetValue<bool?>("Database:RunMigrationsOnStartup")
+    ?? (app.Environment.IsProduction() ? !pointsToLocalDb : true);
 if (runDbBootstrap)
 {
     using var scope = app.Services.CreateScope();

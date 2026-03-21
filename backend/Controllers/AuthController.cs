@@ -21,31 +21,38 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     public IActionResult Login([FromBody] LoginRequest request)
     {
-        if (request == null || string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.Password))
+        try
         {
-            return BadRequest(new { error = "Username and password are required" });
-        }
-
-        var user = _context.Users.FirstOrDefault(u => u.Username == request.Username);
-
-        if (user == null || !ValidatePassword(user, request.Password))
-            return Unauthorized();
-
-        var employee = _context.Employees.FirstOrDefault(e => e.UserId == user.Id);
-
-        var token = GenerateJwtToken(user);
-        return Ok(new 
-        { 
-            token = token,
-            user = new 
+            if (request == null || string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.Password))
             {
-                id = user.Id,
-                username = user.Username,
-                role = user.Role,
-                name = employee?.Name ?? user.Username,
-                employeeId = employee?.Id
+                return BadRequest(new { error = "Username and password are required" });
             }
-        });
+
+            var user = _context.Users.FirstOrDefault(u => u.Username == request.Username);
+
+            if (user == null || !ValidatePassword(user, request.Password))
+                return Unauthorized();
+
+            var employee = _context.Employees.FirstOrDefault(e => e.UserId == user.Id);
+
+            var token = GenerateJwtToken(user);
+            return Ok(new
+            {
+                token,
+                user = new
+                {
+                    id = user.Id,
+                    username = user.Username,
+                    role = user.Role,
+                    name = employee?.Name ?? user.Username,
+                    employeeId = employee?.Id
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { error = "Login processing failed", detail = ex.Message });
+        }
     }
 
     private bool ValidatePassword(User user, string rawPassword)
