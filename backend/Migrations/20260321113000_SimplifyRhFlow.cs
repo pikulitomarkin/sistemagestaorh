@@ -44,18 +44,18 @@ namespace HRManagementAPI.Migrations
                 defaultValue: 0m);
 
             migrationBuilder.Sql(@"
-                UPDATE \"Employees\"
-                SET \"HourlyRate\" = CASE
-                    WHEN \"MonthlyWorkHours\" > 0 THEN ROUND((\"MonthlySalary\" / \"MonthlyWorkHours\"), 2)
+                UPDATE ""Employees""
+                SET ""HourlyRate"" = CASE
+                    WHEN ""MonthlyWorkHours"" > 0 THEN ROUND((""MonthlySalary"" / ""MonthlyWorkHours""), 2)
                     ELSE 0
                 END
-                WHERE \"HourlyRate\" = 0;
+                WHERE ""HourlyRate"" = 0;
             ");
 
             migrationBuilder.Sql(@"
-                UPDATE \"Attendances\"
-                SET \"AbsenceDays\" = 1
-                WHERE \"IsAbsent\" = TRUE AND \"AbsenceDays\" = 0;
+                UPDATE ""Attendances""
+                SET ""AbsenceDays"" = 1
+                WHERE ""IsAbsent"" = TRUE AND ""AbsenceDays"" = 0;
             ");
 
             migrationBuilder.CreateIndex(
