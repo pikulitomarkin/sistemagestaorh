@@ -38,7 +38,8 @@ string ResolveConnectionString(IConfiguration configuration)
             }
         }
 
-        return $"Host={uri.Host};Port={uri.Port};Database={database};Username={username};Password={password};SSL Mode={sslMode};Trust Server Certificate=true";
+        var port = uri.IsDefaultPort || uri.Port <= 0 ? 5432 : uri.Port;
+        return $"Host={uri.Host};Port={port};Database={database};Username={username};Password={password};SSL Mode={sslMode};Trust Server Certificate=true";
     }
 
     if (!string.IsNullOrWhiteSpace(databaseUrl))
@@ -178,7 +179,7 @@ if (runDbBootstrap)
                 DoubleTimeHourlyRate = 72.72m,
                 Position = "Gerente de RH",
                 Department = "Recursos Humanos",
-                HireDate = DateTime.Now.AddYears(-3),
+                HireDate = DateTime.UtcNow.AddYears(-3),
                 UserId = rhUser.Id,
                 IsActive = true
             });
@@ -207,7 +208,7 @@ if (runDbBootstrap)
                 DoubleTimeHourlyRate = 109.09m,
                 Position = "Gerente Geral",
                 Department = "Administração",
-                HireDate = DateTime.Now.AddYears(-5),
+                HireDate = DateTime.UtcNow.AddYears(-5),
                 UserId = gerenteUser.Id,
                 IsActive = true
             });
@@ -236,7 +237,7 @@ if (runDbBootstrap)
                 DoubleTimeHourlyRate = 31.82m,
                 Position = "Analista",
                 Department = "Operações",
-                HireDate = DateTime.Now.AddYears(-1),
+                HireDate = DateTime.UtcNow.AddYears(-1),
                 UserId = colaboradorUser.Id,
                 IsActive = true
             });
