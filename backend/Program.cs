@@ -62,106 +62,114 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-// Seed database with test users
-using (var scope = app.Services.CreateScope())
+var runDbBootstrap = builder.Configuration.GetValue<bool?>("Database:RunMigrationsOnStartup") ?? !app.Environment.IsProduction();
+if (runDbBootstrap)
 {
+    using var scope = app.Services.CreateScope();
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    
-    // Apply pending migrations automatically
-    context.Database.Migrate();
-    
-    // RH User - rh_test / 123
-    if (!context.Users.Any(u => u.Username == "rh_test"))
+    var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("Startup");
+
+    try
     {
-        var rhUser = new User
+        context.Database.Migrate();
+
+        // RH User - rh_test / 123
+        if (!context.Users.Any(u => u.Username == "rh_test"))
         {
-            Username = "rh_test",
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword("123"),
-            Role = "RH"
-        };
-        context.Users.Add(rhUser);
+            var rhUser = new User
+            {
+                Username = "rh_test",
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("123"),
+                Role = "RH"
+            };
+            context.Users.Add(rhUser);
+            context.SaveChanges();
+
+            context.Employees.Add(new Employee
+            {
+                Name = "Maria Silva",
+                CPF = "111.222.333-44",
+                MonthlySalary = 8000.00m,
+                MonthlyWorkHours = 220,
+                HourlyRate = 36.36m,
+                OvertimeHourlyRate = 54.54m,
+                DoubleTimeHourlyRate = 72.72m,
+                Position = "Gerente de RH",
+                Department = "Recursos Humanos",
+                HireDate = DateTime.Now.AddYears(-3),
+                UserId = rhUser.Id,
+                IsActive = true
+            });
+        }
+
+        // Gerente User - gerente_test / 123
+        if (!context.Users.Any(u => u.Username == "gerente_test"))
+        {
+            var gerenteUser = new User
+            {
+                Username = "gerente_test",
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("123"),
+                Role = "Gerente"
+            };
+            context.Users.Add(gerenteUser);
+            context.SaveChanges();
+
+            context.Employees.Add(new Employee
+            {
+                Name = "João Santos",
+                CPF = "222.333.444-55",
+                MonthlySalary = 12000.00m,
+                MonthlyWorkHours = 220,
+                HourlyRate = 54.55m,
+                OvertimeHourlyRate = 81.82m,
+                DoubleTimeHourlyRate = 109.09m,
+                Position = "Gerente Geral",
+                Department = "Administração",
+                HireDate = DateTime.Now.AddYears(-5),
+                UserId = gerenteUser.Id,
+                IsActive = true
+            });
+        }
+
+        // Colaborador User - colaborador_test / 123
+        if (!context.Users.Any(u => u.Username == "colaborador_test"))
+        {
+            var colaboradorUser = new User
+            {
+                Username = "colaborador_test",
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("123"),
+                Role = "Colaborador"
+            };
+            context.Users.Add(colaboradorUser);
+            context.SaveChanges();
+
+            context.Employees.Add(new Employee
+            {
+                Name = "Ana Costa",
+                CPF = "333.444.555-66",
+                MonthlySalary = 3500.00m,
+                MonthlyWorkHours = 220,
+                HourlyRate = 15.91m,
+                OvertimeHourlyRate = 23.86m,
+                DoubleTimeHourlyRate = 31.82m,
+                Position = "Analista",
+                Department = "Operações",
+                HireDate = DateTime.Now.AddYears(-1),
+                UserId = colaboradorUser.Id,
+                IsActive = true
+            });
+        }
+
         context.SaveChanges();
-        
-        // Create employee profile for RH
-        context.Employees.Add(new Employee
-        {
-            Name = "Maria Silva",
-            CPF = "111.222.333-44",
-            MonthlySalary = 8000.00m,
-            MonthlyWorkHours = 220,
-            HourlyRate = 36.36m,
-            OvertimeHourlyRate = 54.54m,
-            DoubleTimeHourlyRate = 72.72m,
-            Position = "Gerente de RH",
-            Department = "Recursos Humanos",
-            HireDate = DateTime.Now.AddYears(-3),
-            UserId = rhUser.Id,
-            IsActive = true
-        });
     }
-    
-    // Gerente User - gerente_test / 123
-    if (!context.Users.Any(u => u.Username == "gerente_test"))
+    catch (Exception ex)
     {
-        var gerenteUser = new User
+        logger.LogError(ex, "Database bootstrap failed during startup.");
+        if (!app.Environment.IsProduction())
         {
-            Username = "gerente_test",
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword("123"),
-            Role = "Gerente"
-        };
-        context.Users.Add(gerenteUser);
-        context.SaveChanges();
-        
-        // Create employee profile for Gerente
-        context.Employees.Add(new Employee
-        {
-            Name = "João Santos",
-            CPF = "222.333.444-55",
-            MonthlySalary = 12000.00m,
-            MonthlyWorkHours = 220,
-            HourlyRate = 54.55m,
-            OvertimeHourlyRate = 81.82m,
-            DoubleTimeHourlyRate = 109.09m,
-            Position = "Gerente Geral",
-            Department = "Administração",
-            HireDate = DateTime.Now.AddYears(-5),
-            UserId = gerenteUser.Id,
-            IsActive = true
-        });
+            throw;
+        }
     }
-    
-    // Colaborador User - colaborador_test / 123
-    if (!context.Users.Any(u => u.Username == "colaborador_test"))
-    {
-        var colaboradorUser = new User
-        {
-            Username = "colaborador_test",
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword("123"),
-            Role = "Colaborador"
-        };
-        context.Users.Add(colaboradorUser);
-        context.SaveChanges();
-        
-        // Create employee profile for Colaborador
-        context.Employees.Add(new Employee
-        {
-            Name = "Ana Costa",
-            CPF = "333.444.555-66",
-            MonthlySalary = 3500.00m,
-            MonthlyWorkHours = 220,
-            HourlyRate = 15.91m,
-            OvertimeHourlyRate = 23.86m,
-            DoubleTimeHourlyRate = 31.82m,
-            Position = "Analista",
-            Department = "Operações",
-            HireDate = DateTime.Now.AddYears(-1),
-            UserId = colaboradorUser.Id,
-            IsActive = true
-        });
-    }
-    
-    // Add some additional test employees
-    context.SaveChanges();
 }
 
 app.Run();
