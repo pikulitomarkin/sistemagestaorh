@@ -22,6 +22,21 @@ namespace HRManagementAPI.Models
         public decimal MonthlySalary { get; set; }
 
         [Required]
+        [Column(TypeName = "decimal(18, 2)")]
+        [Range(0.01, 999999.99)]
+        public decimal HourlyRate { get; set; }
+
+        [Required]
+        [Column(TypeName = "decimal(18, 2)")]
+        [Range(0, 999999.99)]
+        public decimal OvertimeHourlyRate { get; set; } = 0;
+
+        [Required]
+        [Column(TypeName = "decimal(18, 2)")]
+        [Range(0, 999999.99)]
+        public decimal DoubleTimeHourlyRate { get; set; } = 0;
+
+        [Required]
         [Range(1, 220)]
         public int MonthlyWorkHours { get; set; } = 220; // Default work hours
 

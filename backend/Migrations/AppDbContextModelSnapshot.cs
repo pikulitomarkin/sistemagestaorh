@@ -33,6 +33,9 @@ namespace HRManagementAPI.Migrations
                     b.Property<DateTime>("Date")
                         .HasColumnType("TEXT");
 
+                    b.Property<decimal>("AbsenceDays")
+                        .HasColumnType("decimal(5, 2)");
+
                     b.Property<decimal>("DoubleTimeHours")
                         .HasColumnType("decimal(5, 2)");
 
@@ -55,9 +58,15 @@ namespace HRManagementAPI.Migrations
                     b.Property<decimal>("OvertimeHours")
                         .HasColumnType("decimal(5, 2)");
 
+                    b.Property<decimal>("WorkedHours")
+                        .HasColumnType("decimal(5, 2)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("EmployeeId");
+
+                    b.HasIndex("EmployeeId", "Date")
+                        .IsUnique();
 
                     b.ToTable("Attendances");
                 });
@@ -78,8 +87,14 @@ namespace HRManagementAPI.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
+                    b.Property<decimal>("DoubleTimeHourlyRate")
+                        .HasColumnType("decimal(18, 2)");
+
                     b.Property<DateTime>("HireDate")
                         .HasColumnType("TEXT");
+
+                    b.Property<decimal>("HourlyRate")
+                        .HasColumnType("decimal(18, 2)");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("INTEGER");
@@ -94,6 +109,9 @@ namespace HRManagementAPI.Migrations
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("TEXT");
+
+                    b.Property<decimal>("OvertimeHourlyRate")
+                        .HasColumnType("decimal(18, 2)");
 
                     b.Property<string>("Position")
                         .IsRequired()

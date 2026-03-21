@@ -160,7 +160,26 @@ export const attendanceService = {
   },
   
   getByCycle: async (month, year, cycle) => {
-    const response = await api.get(`/attendance/cycle/${month}/${year}/${cycle}`);
+    const cycleType = cycle === '1' ? 'FirstCycle' : cycle === '2' ? 'SecondCycle' : cycle;
+    const referenceDate = new Date(year, month - 1, 1).toISOString();
+    const response = await api.get('/attendance/cycle', {
+      params: {
+        referenceDate,
+        cycleType,
+      },
+    });
+    return response.data;
+  },
+
+  getDaily: async (date) => {
+    const response = await api.get('/attendance/daily', {
+      params: { date },
+    });
+    return response.data;
+  },
+
+  saveDaily: async (payload) => {
+    const response = await api.post('/attendance/daily', payload);
     return response.data;
   },
   
@@ -172,8 +191,20 @@ export const attendanceService = {
 
 // ==================== PAYROLL ====================
 export const payrollService = {
-  getAll: async (params) => {
-    const response = await api.get('/payroll', { params });
+  getAll: async (params = {}) => {
+    const query = { ...params };
+    if (params.month && params.year) {
+      query.startDate = new Date(params.year, params.month - 1, 1).toISOString();
+      query.endDate = new Date(params.year, params.month, 0).toISOString();
+      delete query.month;
+      delete query.year;
+    }
+    if (params.cycle) {
+      query.cycleType = params.cycle;
+      delete query.cycle;
+    }
+
+    const response = await api.get('/payroll/all', { params: query });
     return response.data;
   },
   
@@ -193,7 +224,15 @@ export const payrollService = {
   },
   
   processBatch: async (month, year, cycle) => {
-    const response = await api.post('/payroll/process-batch', { month, year, cycle });
+    const cycleType = cycle === 'Day20' ? 'FirstCycle' : 'SecondCycle';
+    const referenceDate = new Date(year, month - 1, 1).toISOString();
+    const response = await api.post('/payroll/process-cycle', {
+      employeeIds: [],
+      cycleType,
+      referenceDate,
+      includeOvertime: true,
+      includeDoubleTime: true,
+    });
     return response.data;
   },
 
@@ -220,7 +259,14 @@ export const payrollService = {
   },
   
   getAnalytics: async (month, year) => {
-    const response = await api.get(`/payroll/analytics/${month}/${year}`);
+    const startDate = new Date(year, month - 1, 1).toISOString();
+    const endDate = new Date(year, month, 0).toISOString();
+    const response = await api.get('/payroll/statistics', {
+      params: {
+        startDate,
+        endDate,
+      },
+    });
     return response.data;
   },
 };

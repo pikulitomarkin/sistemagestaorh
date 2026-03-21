@@ -18,14 +18,14 @@ import useAuthStore from '../../stores/authStore';
 const navigation = {
   RH: [
     { name: 'Dashboard', href: '/rh/dashboard', icon: LayoutDashboard },
-    { name: 'Funcionários', href: '/rh/employees', icon: Users },
-    { name: 'Frequência', href: '/rh/attendance', icon: Calendar },
-    { name: 'Folha de Pagamento', href: '/rh/payroll', icon: DollarSign },
     { name: 'Relatórios', href: '/rh/reports', icon: FileText },
   ],
   Gerente: [
     { name: 'Dashboard', href: '/manager/dashboard', icon: LayoutDashboard },
     { name: 'Equipe', href: '/manager/team', icon: Users },
+    { name: 'Funcionários', href: '/manager/employees', icon: Users },
+    { name: 'Frequência', href: '/manager/attendance', icon: Calendar },
+    { name: 'Folha de Pagamento', href: '/manager/payroll', icon: DollarSign },
     { name: 'Relatórios', href: '/manager/reports', icon: FileText },
   ],
   Colaborador: [

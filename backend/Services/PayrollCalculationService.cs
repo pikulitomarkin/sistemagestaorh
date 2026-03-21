@@ -45,14 +45,14 @@ namespace HRManagementAPI.Services
             decimal doubleTimeHours = includeDoubleTime ? attendances.Sum(a => a.DoubleTimeHours) : 0m;
 
             // Cálculos financeiros
-            decimal hourlyRate = CalculateHourlyRate(employee.MonthlySalary, employee.MonthlyWorkHours);
+            decimal hourlyRate = employee.HourlyRate;
             decimal baseAmountForCycle = employee.MonthlySalary / 2; // 50% para cada ciclo
             
             // Regra de negócio: Falta = Salário / 20. Usamos o salário base MENSAL.
             decimal absenceDeduction = (employee.MonthlySalary / 20m) * absenceDays;
 
-            decimal overtimeValue = CalculateOvertimeValue(hourlyRate, overtimeHours);
-            decimal doubleTimeValue = CalculateDoubleTimeValue(hourlyRate, doubleTimeHours);
+            decimal overtimeValue = CalculateOvertimeValue(employee.OvertimeHourlyRate, hourlyRate, overtimeHours);
+            decimal doubleTimeValue = CalculateDoubleTimeValue(employee.DoubleTimeHourlyRate, hourlyRate, doubleTimeHours);
             decimal totalAdditions = overtimeValue + doubleTimeValue;
             
             decimal grossPayForCycle = baseAmountForCycle + totalAdditions - absenceDeduction;
@@ -131,9 +131,11 @@ namespace HRManagementAPI.Services
             return monthlySalary / monthlyHours;
         }
 
-        public decimal CalculateOvertimeValue(decimal hourlyRate, decimal overtimeHours) => hourlyRate * 1.5m * overtimeHours;
+        public decimal CalculateOvertimeValue(decimal configuredOvertimeRate, decimal fallbackHourlyRate, decimal overtimeHours)
+            => (configuredOvertimeRate > 0 ? configuredOvertimeRate : fallbackHourlyRate) * overtimeHours;
 
-        public decimal CalculateDoubleTimeValue(decimal hourlyRate, decimal doubleTimeHours) => hourlyRate * 2m * doubleTimeHours;
+        public decimal CalculateDoubleTimeValue(decimal configuredDoubleTimeRate, decimal fallbackHourlyRate, decimal doubleTimeHours)
+            => (configuredDoubleTimeRate > 0 ? configuredDoubleTimeRate : fallbackHourlyRate) * doubleTimeHours;
 
         public decimal CalculateFGTS(decimal grossSalary) => grossSalary * FGTSRate;
     }

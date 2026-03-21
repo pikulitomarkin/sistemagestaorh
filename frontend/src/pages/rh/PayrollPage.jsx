@@ -214,8 +214,8 @@ export function PayrollPage() {
               onChange={(e) => setSelectedCycle(e.target.value)}
             >
               <option value="">Todos os Ciclos</option>
-              <option value="Day20">Dia 20</option>
-              <option value="Day05">Dia 05</option>
+              <option value="FirstCycle">Dia 20</option>
+              <option value="SecondCycle">Dia 05</option>
             </Select>
 
             <div className="flex items-center gap-2">

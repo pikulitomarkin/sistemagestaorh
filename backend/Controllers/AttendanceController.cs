@@ -20,7 +20,7 @@ public class AttendanceController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Roles = "RH,Gerente")]
+    [Authorize(Roles = "Gerente")]
     public async Task<IActionResult> GetAllAttendances(
         [FromQuery] int? month,
         [FromQuery] int? year)
@@ -49,10 +49,14 @@ public class AttendanceController : ControllerBase
                     a.EntryTime,
                     a.ExitTime,
                     a.IsAbsent,
-                    HoursWorked = 8,
+                    HoursWorked = a.WorkedHours,
+                    WorkedHours = a.WorkedHours,
+                    AbsenceDays = a.AbsenceDays,
                     OvertimeHours50 = a.OvertimeHours,
                     OvertimeHours100 = a.DoubleTimeHours,
-                    Absences = a.IsAbsent ? 1 : 0,
+                    OvertimeHours = a.OvertimeHours,
+                    DoubleTimeHours = a.DoubleTimeHours,
+                    Absences = a.AbsenceDays > 0 ? a.AbsenceDays : (a.IsAbsent ? 1 : 0),
                     a.Notes,
                     Cycle = 1
                 })
@@ -68,7 +72,7 @@ public class AttendanceController : ControllerBase
     }
 
     [HttpGet("employee/{employeeId}")]
-    [Authorize(Roles = "RH,Gerente,Colaborador")]
+    [Authorize(Roles = "Gerente,Colaborador")]
     public async Task<IActionResult> GetAttendanceByEmployee(
         int employeeId,
         [FromQuery] DateTime? startDate,
@@ -113,6 +117,8 @@ public class AttendanceController : ControllerBase
                     a.EntryTime,
                     a.ExitTime,
                     a.IsAbsent,
+                    a.WorkedHours,
+                    a.AbsenceDays,
                     a.OvertimeHours,
                     a.DoubleTimeHours,
                     a.Notes,
@@ -131,7 +137,7 @@ public class AttendanceController : ControllerBase
     }
 
     [HttpGet("cycle")]
-    [Authorize(Roles = "RH,Gerente")]
+    [Authorize(Roles = "Gerente")]
     public async Task<IActionResult> GetAttendanceByCycle(
         [FromQuery] DateTime referenceDate,
         [FromQuery] string cycleType)
@@ -169,6 +175,8 @@ public class AttendanceController : ControllerBase
                     a.EntryTime,
                     a.ExitTime,
                     a.IsAbsent,
+                    a.WorkedHours,
+                    a.AbsenceDays,
                     a.OvertimeHours,
                     a.DoubleTimeHours,
                     a.Notes
@@ -190,8 +198,135 @@ public class AttendanceController : ControllerBase
         }
     }
 
+    [HttpGet("daily")]
+    [Authorize(Roles = "Gerente")]
+    public async Task<IActionResult> GetDailyLaunch([FromQuery] DateTime date)
+    {
+        try
+        {
+            var targetDate = date == default ? DateTime.UtcNow.Date : date.Date;
+
+            var employees = await _context.Employees
+                .Where(e => e.IsActive)
+                .OrderBy(e => e.Name)
+                .Select(e => new
+                {
+                    e.Id,
+                    e.Name,
+                    e.Department,
+                    e.Position
+                })
+                .ToListAsync();
+
+            var attendances = await _context.Attendances
+                .Where(a => a.Date.Date == targetDate)
+                .ToDictionaryAsync(a => a.EmployeeId, a => a);
+
+            var result = employees.Select(e =>
+            {
+                attendances.TryGetValue(e.Id, out var launch);
+                return new
+                {
+                    employeeId = e.Id,
+                    employeeName = e.Name,
+                    e.Department,
+                    e.Position,
+                    date = targetDate,
+                    attendanceId = launch?.Id,
+                    workedHours = launch?.WorkedHours ?? 0,
+                    overtimeHours = launch?.OvertimeHours ?? 0,
+                    doubleTimeHours = launch?.DoubleTimeHours ?? 0,
+                    absenceDays = launch?.AbsenceDays ?? 0,
+                    notes = launch?.Notes ?? string.Empty
+                };
+            });
+
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching daily launch data");
+            return StatusCode(500, new { error = "An error occurred while fetching daily launch data" });
+        }
+    }
+
+    [HttpPost("daily")]
+    [Authorize(Roles = "Gerente")]
+    public async Task<IActionResult> UpsertDailyLaunch([FromBody] DailyLaunchRequest request)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var username = User.FindFirst(ClaimTypes.Name)?.Value;
+            var targetDate = request.Date.Date;
+            var created = 0;
+            var updated = 0;
+
+            foreach (var item in request.Entries)
+            {
+                var employee = await _context.Employees.FindAsync(item.EmployeeId);
+                if (employee == null || !employee.IsActive)
+                {
+                    continue;
+                }
+
+                var existing = await _context.Attendances
+                    .FirstOrDefaultAsync(a => a.EmployeeId == item.EmployeeId && a.Date.Date == targetDate);
+
+                var normalizedAbsenceDays = item.AbsenceDays ?? 0;
+                var isAbsent = normalizedAbsenceDays > 0;
+
+                if (existing == null)
+                {
+                    _context.Attendances.Add(new Attendance
+                    {
+                        EmployeeId = item.EmployeeId,
+                        Date = targetDate,
+                        WorkedHours = item.WorkedHours,
+                        OvertimeHours = item.OvertimeHours,
+                        DoubleTimeHours = item.DoubleTimeHours,
+                        AbsenceDays = normalizedAbsenceDays,
+                        IsAbsent = isAbsent,
+                        Notes = item.Notes,
+                        CreatedBy = username
+                    });
+                    created++;
+                }
+                else
+                {
+                    existing.WorkedHours = item.WorkedHours;
+                    existing.OvertimeHours = item.OvertimeHours;
+                    existing.DoubleTimeHours = item.DoubleTimeHours;
+                    existing.AbsenceDays = normalizedAbsenceDays;
+                    existing.IsAbsent = isAbsent;
+                    existing.Notes = item.Notes;
+                    updated++;
+                }
+            }
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                message = "Daily launch saved successfully",
+                created,
+                updated,
+                date = targetDate
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error saving daily launch data");
+            return StatusCode(500, new { error = "An error occurred while saving daily launch data" });
+        }
+    }
+
     [HttpPost]
-    [Authorize(Roles = "RH,Colaborador")]
+    [Authorize(Roles = "Gerente")]
     public async Task<IActionResult> CreateAttendance([FromBody] CreateAttendanceRequest request)
     {
         try
@@ -239,9 +374,11 @@ public class AttendanceController : ControllerBase
                 Date = request.Date.Date,
                 EntryTime = request.EntryTime,
                 ExitTime = request.ExitTime,
-                IsAbsent = request.IsAbsent,
-                OvertimeHours = request.OvertimeHours,
-                DoubleTimeHours = request.DoubleTimeHours,
+                WorkedHours = request.WorkedHours ?? request.HoursWorked ?? 0,
+                AbsenceDays = request.AbsenceDays ?? request.Absences ?? (request.IsAbsent ? 1 : 0),
+                IsAbsent = (request.AbsenceDays ?? request.Absences ?? (request.IsAbsent ? 1 : 0)) > 0,
+                OvertimeHours = request.OvertimeHours ?? request.OvertimeHours50 ?? 0,
+                DoubleTimeHours = request.DoubleTimeHours ?? request.OvertimeHours100 ?? 0,
                 Notes = request.Notes,
                 CreatedBy = username
             };
@@ -261,7 +398,9 @@ public class AttendanceController : ControllerBase
                     attendance.Date,
                     attendance.EntryTime,
                     attendance.ExitTime,
+                    attendance.WorkedHours,
                     attendance.IsAbsent,
+                    attendance.AbsenceDays,
                     attendance.OvertimeHours,
                     attendance.DoubleTimeHours
                 });
@@ -274,7 +413,7 @@ public class AttendanceController : ControllerBase
     }
 
     [HttpPost("bulk")]
-    [Authorize(Roles = "RH")]
+    [Authorize(Roles = "Gerente")]
     public async Task<IActionResult> CreateBulkAttendance([FromBody] List<CreateAttendanceRequest> requests)
     {
         try
@@ -314,9 +453,11 @@ public class AttendanceController : ControllerBase
                     Date = request.Date.Date,
                     EntryTime = request.EntryTime,
                     ExitTime = request.ExitTime,
-                    IsAbsent = request.IsAbsent,
-                    OvertimeHours = request.OvertimeHours,
-                    DoubleTimeHours = request.DoubleTimeHours,
+                    WorkedHours = request.WorkedHours ?? request.HoursWorked ?? 0,
+                    AbsenceDays = request.AbsenceDays ?? request.Absences ?? (request.IsAbsent ? 1 : 0),
+                    IsAbsent = (request.AbsenceDays ?? request.Absences ?? (request.IsAbsent ? 1 : 0)) > 0,
+                    OvertimeHours = request.OvertimeHours ?? request.OvertimeHours50 ?? 0,
+                    DoubleTimeHours = request.DoubleTimeHours ?? request.OvertimeHours100 ?? 0,
                     Notes = request.Notes,
                     CreatedBy = username
                 });
@@ -344,7 +485,7 @@ public class AttendanceController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    [Authorize(Roles = "RH")]
+    [Authorize(Roles = "Gerente")]
     public async Task<IActionResult> UpdateAttendance(int id, [FromBody] UpdateAttendanceRequest request)
     {
         try
@@ -357,9 +498,11 @@ public class AttendanceController : ControllerBase
 
             attendance.EntryTime = request.EntryTime;
             attendance.ExitTime = request.ExitTime;
-            attendance.IsAbsent = request.IsAbsent;
-            attendance.OvertimeHours = request.OvertimeHours;
-            attendance.DoubleTimeHours = request.DoubleTimeHours;
+            attendance.WorkedHours = request.WorkedHours ?? request.HoursWorked ?? attendance.WorkedHours;
+            attendance.AbsenceDays = request.AbsenceDays ?? request.Absences ?? attendance.AbsenceDays;
+            attendance.IsAbsent = attendance.AbsenceDays > 0 || request.IsAbsent;
+            attendance.OvertimeHours = request.OvertimeHours ?? request.OvertimeHours50 ?? attendance.OvertimeHours;
+            attendance.DoubleTimeHours = request.DoubleTimeHours ?? request.OvertimeHours100 ?? attendance.DoubleTimeHours;
             attendance.Notes = request.Notes;
 
             await _context.SaveChangesAsync();
@@ -376,7 +519,7 @@ public class AttendanceController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Roles = "RH")]
+    [Authorize(Roles = "Gerente")]
     public async Task<IActionResult> DeleteAttendance(int id)
     {
         try
@@ -417,10 +560,28 @@ public class CreateAttendanceRequest
     public bool IsAbsent { get; set; } = false;
 
     [Range(0, 24)]
-    public decimal OvertimeHours { get; set; } = 0;
+    public decimal? WorkedHours { get; set; }
 
     [Range(0, 24)]
-    public decimal DoubleTimeHours { get; set; } = 0;
+    public decimal? HoursWorked { get; set; }
+
+    [Range(0, 31)]
+    public decimal? AbsenceDays { get; set; }
+
+    [Range(0, 31)]
+    public decimal? Absences { get; set; }
+
+    [Range(0, 24)]
+    public decimal? OvertimeHours { get; set; }
+
+    [Range(0, 24)]
+    public decimal? OvertimeHours50 { get; set; }
+
+    [Range(0, 24)]
+    public decimal? DoubleTimeHours { get; set; }
+
+    [Range(0, 24)]
+    public decimal? OvertimeHours100 { get; set; }
 
     [MaxLength(500)]
     public string? Notes { get; set; }
@@ -435,10 +596,59 @@ public class UpdateAttendanceRequest
     public bool IsAbsent { get; set; }
 
     [Range(0, 24)]
+    public decimal? WorkedHours { get; set; }
+
+    [Range(0, 24)]
+    public decimal? HoursWorked { get; set; }
+
+    [Range(0, 31)]
+    public decimal? AbsenceDays { get; set; }
+
+    [Range(0, 31)]
+    public decimal? Absences { get; set; }
+
+    [Range(0, 24)]
+    public decimal? OvertimeHours { get; set; }
+
+    [Range(0, 24)]
+    public decimal? OvertimeHours50 { get; set; }
+
+    [Range(0, 24)]
+    public decimal? DoubleTimeHours { get; set; }
+
+    [Range(0, 24)]
+    public decimal? OvertimeHours100 { get; set; }
+
+    [MaxLength(500)]
+    public string? Notes { get; set; }
+}
+
+public class DailyLaunchRequest
+{
+    [Required]
+    public DateTime Date { get; set; }
+
+    [Required]
+    [MinLength(1)]
+    public List<DailyLaunchEntryRequest> Entries { get; set; } = new();
+}
+
+public class DailyLaunchEntryRequest
+{
+    [Required]
+    public int EmployeeId { get; set; }
+
+    [Range(0, 24)]
+    public decimal WorkedHours { get; set; }
+
+    [Range(0, 24)]
     public decimal OvertimeHours { get; set; }
 
     [Range(0, 24)]
     public decimal DoubleTimeHours { get; set; }
+
+    [Range(0, 31)]
+    public decimal? AbsenceDays { get; set; }
 
     [MaxLength(500)]
     public string? Notes { get; set; }

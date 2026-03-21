@@ -30,7 +30,7 @@ public class PayrollController : ControllerBase
     }
 
     [HttpPost("calculate-cycle")]
-    [Authorize(Roles = "RH,Gerente")]
+    [Authorize(Roles = "Gerente")]
     public async Task<IActionResult> CalculateCyclePay([FromBody] CycleCalculationRequest request)
     {
         try
@@ -53,7 +53,7 @@ public class PayrollController : ControllerBase
     }
 
     [HttpPost("process-cycle")]
-    [Authorize(Roles = "RH")]
+    [Authorize(Roles = "Gerente")]
     public async Task<IActionResult> ProcessCyclePayroll([FromBody] ProcessCycleRequest request)
     {
         try
@@ -124,7 +124,7 @@ public class PayrollController : ControllerBase
     }
     
     [HttpPost("calculate")]
-    [Authorize(Roles = "RH,Gerente")]
+    [Authorize(Roles = "Gerente")]
     public async Task<IActionResult> CalculatePayroll([FromBody] PayrollRequest request)
     {
         try
@@ -251,7 +251,7 @@ public class PayrollController : ControllerBase
     }
 
     [HttpGet("all")]
-    [Authorize(Roles = "RH,Gerente")]
+    [Authorize(Roles = "Gerente")]
     public async Task<IActionResult> GetAllPayrolls(
         [FromQuery] DateTime? startDate, 
         [FromQuery] DateTime? endDate,
@@ -309,7 +309,7 @@ public class PayrollController : ControllerBase
     }
 
     [HttpGet("statistics")]
-    [Authorize(Roles = "RH,Gerente")]
+    [Authorize(Roles = "Gerente")]
     public async Task<IActionResult> GetPayrollStatistics(
         [FromQuery] DateTime? startDate,
         [FromQuery] DateTime? endDate)

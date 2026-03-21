@@ -60,9 +60,6 @@ function App() {
             }>
               <Route index element={<Navigate to="/rh/dashboard" replace />} />
               <Route path="dashboard" element={<RHDashboard />} />
-              <Route path="employees" element={<EmployeesPage />} />
-              <Route path="attendance" element={<AttendancePage />} />
-              <Route path="payroll" element={<PayrollPage />} />
               <Route path="reports" element={<ReportsPage />} />
             </Route>
 
@@ -75,6 +72,9 @@ function App() {
               <Route index element={<Navigate to="/manager/dashboard" replace />} />
               <Route path="dashboard" element={<ManagerDashboard />} />
               <Route path="team" element={<ManagerEmployeesPage />} />
+              <Route path="attendance" element={<AttendancePage />} />
+              <Route path="employees" element={<EmployeesPage />} />
+              <Route path="payroll" element={<PayrollPage />} />
               <Route path="reports" element={<ManagerReportsPage />} />
             </Route>
 

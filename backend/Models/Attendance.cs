@@ -20,6 +20,10 @@ namespace HRManagementAPI.Models
         public TimeSpan? ExitTime { get; set; }
         
         public bool IsAbsent { get; set; } = false;
+
+        [Range(0, 24)]
+        [Column(TypeName = "decimal(5, 2)")]
+        public decimal WorkedHours { get; set; } = 0;
         
         [Range(0, 24)]
         [Column(TypeName = "decimal(5, 2)")]
@@ -28,6 +32,10 @@ namespace HRManagementAPI.Models
         [Range(0, 24)]
         [Column(TypeName = "decimal(5, 2)")]
         public decimal DoubleTimeHours { get; set; } = 0; // Dobras (100%)
+
+        [Range(0, 31)]
+        [Column(TypeName = "decimal(5, 2)")]
+        public decimal AbsenceDays { get; set; } = 0;
         
         [MaxLength(500)]
         public string? Notes { get; set; }

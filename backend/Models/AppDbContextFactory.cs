@@ -8,7 +8,7 @@ namespace HRManagementAPI.Models
         public AppDbContext CreateDbContext(string[] args)
         {
             var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
-            optionsBuilder.UseSqlite("Data Source=HRManagement.db");
+            optionsBuilder.UseNpgsql("Host=localhost;Port=5432;Database=hr_management;Username=postgres;Password=postgres");
 
             return new AppDbContext(optionsBuilder.Options);
         }

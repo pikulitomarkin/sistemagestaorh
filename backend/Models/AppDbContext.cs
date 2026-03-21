@@ -9,5 +9,14 @@ namespace HRManagementAPI.Models
         public DbSet<Employee> Employees { get; set; }
         public DbSet<Attendance> Attendances { get; set; }
         public DbSet<Payroll> Payrolls { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<Attendance>()
+                .HasIndex(a => new { a.EmployeeId, a.Date })
+                .IsUnique();
+        }
     }
 }

@@ -11,7 +11,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddScoped<PayrollService>();
 builder.Services.AddScoped<INSSService>();
 builder.Services.AddScoped<PayrollCalculationService>();
@@ -89,6 +89,9 @@ using (var scope = app.Services.CreateScope())
             CPF = "111.222.333-44",
             MonthlySalary = 8000.00m,
             MonthlyWorkHours = 220,
+            HourlyRate = 36.36m,
+            OvertimeHourlyRate = 54.54m,
+            DoubleTimeHourlyRate = 72.72m,
             Position = "Gerente de RH",
             Department = "Recursos Humanos",
             HireDate = DateTime.Now.AddYears(-3),
@@ -116,6 +119,9 @@ using (var scope = app.Services.CreateScope())
             CPF = "222.333.444-55",
             MonthlySalary = 12000.00m,
             MonthlyWorkHours = 220,
+            HourlyRate = 54.55m,
+            OvertimeHourlyRate = 81.82m,
+            DoubleTimeHourlyRate = 109.09m,
             Position = "Gerente Geral",
             Department = "Administração",
             HireDate = DateTime.Now.AddYears(-5),
@@ -143,6 +149,9 @@ using (var scope = app.Services.CreateScope())
             CPF = "333.444.555-66",
             MonthlySalary = 3500.00m,
             MonthlyWorkHours = 220,
+            HourlyRate = 15.91m,
+            OvertimeHourlyRate = 23.86m,
+            DoubleTimeHourlyRate = 31.82m,
             Position = "Analista",
             Department = "Operações",
             HireDate = DateTime.Now.AddYears(-1),

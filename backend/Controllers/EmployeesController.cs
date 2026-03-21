@@ -20,7 +20,7 @@ public class EmployeesController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Roles = "RH,Gerente")]
+    [Authorize(Roles = "Gerente")]
     public async Task<IActionResult> GetEmployees([FromQuery] bool includeInactive = false)
     {
         try
@@ -39,6 +39,9 @@ public class EmployeesController : ControllerBase
                     e.Name,
                     e.CPF,
                     e.MonthlySalary,
+                    e.HourlyRate,
+                    e.OvertimeHourlyRate,
+                    e.DoubleTimeHourlyRate,
                     e.Position,
                     e.Department,
                     e.HireDate,
@@ -58,7 +61,7 @@ public class EmployeesController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    [Authorize(Roles = "RH,Gerente")]
+    [Authorize(Roles = "Gerente")]
     public async Task<IActionResult> GetEmployee(int id)
     {
         try
@@ -78,6 +81,9 @@ public class EmployeesController : ControllerBase
                 employee.Name,
                 employee.CPF,
                 employee.MonthlySalary,
+                employee.HourlyRate,
+                employee.OvertimeHourlyRate,
+                employee.DoubleTimeHourlyRate,
                 employee.MonthlyWorkHours,
                 employee.Position,
                 employee.Department,
@@ -121,6 +127,9 @@ public class EmployeesController : ControllerBase
                 employee.Name,
                 employee.CPF,
                 employee.MonthlySalary,
+                employee.HourlyRate,
+                employee.OvertimeHourlyRate,
+                employee.DoubleTimeHourlyRate,
                 employee.Position,
                 employee.Department,
                 employee.HireDate
@@ -134,7 +143,7 @@ public class EmployeesController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "RH,Gerente")]
+    [Authorize(Roles = "Gerente")]
     public async Task<IActionResult> CreateEmployee([FromBody] CreateEmployeeRequest request)
     {
         try
@@ -180,6 +189,9 @@ public class EmployeesController : ControllerBase
                 CPF = request.CPF,
                 MonthlySalary = request.MonthlySalary,
                 MonthlyWorkHours = request.MonthlyWorkHours,
+                HourlyRate = request.HourlyRate ?? (request.MonthlySalary / request.MonthlyWorkHours),
+                OvertimeHourlyRate = request.OvertimeHourlyRate ?? 0,
+                DoubleTimeHourlyRate = request.DoubleTimeHourlyRate ?? 0,
                 Position = request.Position,
                 Department = request.Department,
                 HireDate = request.HireDate,
@@ -209,7 +221,7 @@ public class EmployeesController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    [Authorize(Roles = "RH")]
+    [Authorize(Roles = "Gerente")]
     public async Task<IActionResult> UpdateEmployee(int id, [FromBody] UpdateEmployeeRequest request)
     {
         try
@@ -224,6 +236,9 @@ public class EmployeesController : ControllerBase
             employee.Name = request.Name;
             employee.MonthlySalary = request.MonthlySalary;
             employee.MonthlyWorkHours = request.MonthlyWorkHours;
+            employee.HourlyRate = request.HourlyRate ?? (request.MonthlySalary / request.MonthlyWorkHours);
+            employee.OvertimeHourlyRate = request.OvertimeHourlyRate ?? employee.OvertimeHourlyRate;
+            employee.DoubleTimeHourlyRate = request.DoubleTimeHourlyRate ?? employee.DoubleTimeHourlyRate;
             employee.Position = request.Position;
             employee.Department = request.Department;
 
@@ -241,7 +256,7 @@ public class EmployeesController : ControllerBase
     }
 
     [HttpGet("check")]
-    [Authorize(Roles = "RH,Gerente")]
+    [Authorize(Roles = "Gerente")]
     public async Task<IActionResult> CheckAvailability([FromQuery] string? cpf, [FromQuery] string? username)
     {
         try
@@ -273,7 +288,7 @@ public class EmployeesController : ControllerBase
     }
 
     [HttpPost("{id}/deactivate")]
-    [Authorize(Roles = "RH")]
+    [Authorize(Roles = "Gerente")]
     public async Task<IActionResult> DeactivateEmployee(int id)
     {
         try
@@ -301,7 +316,7 @@ public class EmployeesController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Roles = "RH,Gerente")]
+    [Authorize(Roles = "Gerente")]
     public async Task<IActionResult> DeleteEmployee(int id)
     {
         try
@@ -362,6 +377,15 @@ public class CreateEmployeeRequest
     [Range(0.01, 999999.99)]
     public decimal MonthlySalary { get; set; }
 
+    [Range(0.01, 999999.99)]
+    public decimal? HourlyRate { get; set; }
+
+    [Range(0, 999999.99)]
+    public decimal? OvertimeHourlyRate { get; set; }
+
+    [Range(0, 999999.99)]
+    public decimal? DoubleTimeHourlyRate { get; set; }
+
     [Required]
     [Range(1, 220)]
     public int MonthlyWorkHours { get; set; } = 220;
@@ -396,6 +420,15 @@ public class UpdateEmployeeRequest
 
     [Required]
     public decimal MonthlySalary { get; set; }
+
+    [Range(0.01, 999999.99)]
+    public decimal? HourlyRate { get; set; }
+
+    [Range(0, 999999.99)]
+    public decimal? OvertimeHourlyRate { get; set; }
+
+    [Range(0, 999999.99)]
+    public decimal? DoubleTimeHourlyRate { get; set; }
 
     [Required]
     public int MonthlyWorkHours { get; set; }

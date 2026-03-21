@@ -27,12 +27,14 @@ namespace HRManagementAPI.Services
 
             foreach (var attendance in attendances)
             {
-                if (attendance.IsAbsent)
-                {
-                    deductions += employee.MonthlySalary / 20; // Falta = Salário / 20
-                }
-                additions += attendance.OvertimeHours * (employee.MonthlySalary / 160); // Assumindo 160 horas/mês
-                additions += attendance.DoubleTimeHours * 2 * (employee.MonthlySalary / 160); // Dobras = 2x
+                var absenceDays = attendance.AbsenceDays > 0 ? attendance.AbsenceDays : (attendance.IsAbsent ? 1 : 0);
+                deductions += (employee.MonthlySalary / 20) * absenceDays;
+
+                var overtimeRate = employee.OvertimeHourlyRate > 0 ? employee.OvertimeHourlyRate : employee.HourlyRate;
+                var doubleTimeRate = employee.DoubleTimeHourlyRate > 0 ? employee.DoubleTimeHourlyRate : employee.HourlyRate;
+
+                additions += attendance.OvertimeHours * overtimeRate;
+                additions += attendance.DoubleTimeHours * doubleTimeRate;
             }
 
             return baseSalary + additions - deductions;
