@@ -8,10 +8,53 @@ using BCrypt.Net;
 
 var builder = WebApplication.CreateBuilder(args);
 
+string ResolveConnectionString(IConfiguration configuration)
+{
+    var explicitConnectionString = configuration.GetConnectionString("DefaultConnection");
+    var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+
+    if (!string.IsNullOrWhiteSpace(databaseUrl) &&
+        (databaseUrl.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase) ||
+         databaseUrl.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase)))
+    {
+        var uri = new Uri(databaseUrl);
+        var userInfo = uri.UserInfo.Split(':', 2);
+        var username = Uri.UnescapeDataString(userInfo[0]);
+        var password = userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : string.Empty;
+        var database = uri.AbsolutePath.Trim('/');
+
+        var sslMode = "Require";
+        if (!string.IsNullOrWhiteSpace(uri.Query))
+        {
+            var queryParts = uri.Query.TrimStart('?').Split('&', StringSplitOptions.RemoveEmptyEntries);
+            foreach (var part in queryParts)
+            {
+                var kv = part.Split('=', 2);
+                if (kv.Length == 2 && kv[0].Equals("sslmode", StringComparison.OrdinalIgnoreCase))
+                {
+                    sslMode = Uri.UnescapeDataString(kv[1]);
+                    break;
+                }
+            }
+        }
+
+        return $"Host={uri.Host};Port={uri.Port};Database={database};Username={username};Password={password};SSL Mode={sslMode};Trust Server Certificate=true";
+    }
+
+    if (!string.IsNullOrWhiteSpace(databaseUrl))
+    {
+        return databaseUrl;
+    }
+
+    return explicitConnectionString ?? string.Empty;
+}
+
+var resolvedConnectionString = ResolveConnectionString(builder.Configuration);
+
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(resolvedConnectionString));
 builder.Services.AddScoped<PayrollService>();
 builder.Services.AddScoped<INSSService>();
 builder.Services.AddScoped<PayrollCalculationService>();
@@ -96,12 +139,12 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? string.Empty;
-var pointsToLocalDb = connectionString.Contains("localhost", StringComparison.OrdinalIgnoreCase) ||
-                      connectionString.Contains("127.0.0.1", StringComparison.OrdinalIgnoreCase);
+var pointsToLocalDb = resolvedConnectionString.Contains("localhost", StringComparison.OrdinalIgnoreCase) ||
+                      resolvedConnectionString.Contains("127.0.0.1", StringComparison.OrdinalIgnoreCase);
+var hasConnectionString = !string.IsNullOrWhiteSpace(resolvedConnectionString);
 
 var runDbBootstrap = builder.Configuration.GetValue<bool?>("Database:RunMigrationsOnStartup")
-    ?? (app.Environment.IsProduction() ? !pointsToLocalDb : true);
+    ?? (app.Environment.IsProduction() ? (hasConnectionString && !pointsToLocalDb) : true);
 if (runDbBootstrap)
 {
     using var scope = app.Services.CreateScope();
