@@ -15,6 +15,24 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<PayrollService>();
 builder.Services.AddScoped<INSSService>();
 builder.Services.AddScoped<PayrollCalculationService>();
+
+var configuredCorsOrigins = builder.Configuration
+    .GetSection("Cors:Origins")
+    .Get<string[]>() ?? Array.Empty<string>();
+
+var staticCorsOrigins = new[]
+{
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "http://127.0.0.1:5173",
+    "https://sistemagestaorh-hcvw.vercel.app"
+};
+
+var allowedCorsOrigins = staticCorsOrigins
+    .Concat(configuredCorsOrigins)
+    .Distinct(StringComparer.OrdinalIgnoreCase)
+    .ToArray();
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -32,18 +50,34 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddAuthorization();
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowSpecificOrigins", builder => builder
-        .WithOrigins(
-            "http://localhost:5173",
-            "http://localhost:5174",
-            "http://127.0.0.1:5173",
-            "https://your-production-domain.com",
-            "https://sistemagestaorh-hcvw.vercel.app"
-        )
+    options.AddPolicy("AllowSpecificOrigins", policy => policy
+        .SetIsOriginAllowed(origin =>
+        {
+            if (string.IsNullOrWhiteSpace(origin))
+            {
+                return false;
+            }
+
+            if (allowedCorsOrigins.Contains(origin, StringComparer.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri))
+            {
+                return false;
+            }
+
+            var isLocalhost = uri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase) ||
+                              uri.Host.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase);
+
+            var isVercelPreview = uri.Host.EndsWith(".vercel.app", StringComparison.OrdinalIgnoreCase);
+
+            return isLocalhost || isVercelPreview;
+        })
         .AllowAnyMethod()
         .AllowAnyHeader()
-        .AllowCredentials()
-        .SetIsOriginAllowedToAllowWildcardSubdomains());
+        .AllowCredentials());
 });
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
