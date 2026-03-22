@@ -13,6 +13,13 @@ string ResolveConnectionString(IConfiguration configuration)
     var explicitConnectionString = configuration.GetConnectionString("DefaultConnection");
     var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
 
+    // Prioritize explicitly configured connection strings (appsettings/env ConnectionStrings__DefaultConnection)
+    // to avoid accidental overrides from invalid platform-provided DATABASE_URL values.
+    if (!string.IsNullOrWhiteSpace(explicitConnectionString))
+    {
+        return explicitConnectionString;
+    }
+
     if (!string.IsNullOrWhiteSpace(databaseUrl) &&
         (databaseUrl.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase) ||
          databaseUrl.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase)))
@@ -47,15 +54,56 @@ string ResolveConnectionString(IConfiguration configuration)
         return databaseUrl;
     }
 
-    return explicitConnectionString ?? string.Empty;
+    return string.Empty;
 }
 
 var resolvedConnectionString = ResolveConnectionString(builder.Configuration);
 
+static bool IsSqliteConnectionString(string connectionString)
+{
+    if (string.IsNullOrWhiteSpace(connectionString))
+    {
+        return false;
+    }
+
+    // Render examples commonly use SQLite style: Data Source=app.db
+    return connectionString.Contains("Data Source=", StringComparison.OrdinalIgnoreCase) ||
+           connectionString.EndsWith(".db", StringComparison.OrdinalIgnoreCase);
+}
+
+static bool IsPostgresConnectionString(string connectionString)
+{
+    if (string.IsNullOrWhiteSpace(connectionString))
+    {
+        return false;
+    }
+
+    return connectionString.Contains("Host=", StringComparison.OrdinalIgnoreCase) ||
+           connectionString.Contains("Username=", StringComparison.OrdinalIgnoreCase) ||
+           connectionString.Contains("Server=", StringComparison.OrdinalIgnoreCase) ||
+           connectionString.Contains("postgres://", StringComparison.OrdinalIgnoreCase) ||
+           connectionString.Contains("postgresql://", StringComparison.OrdinalIgnoreCase);
+}
+
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(resolvedConnectionString));
+{
+    if (IsSqliteConnectionString(resolvedConnectionString))
+    {
+        options.UseSqlite(resolvedConnectionString);
+        return;
+    }
+
+    if (IsPostgresConnectionString(resolvedConnectionString))
+    {
+        options.UseNpgsql(resolvedConnectionString);
+        return;
+    }
+
+    // Default to PostgreSQL for backward compatibility.
+    options.UseNpgsql(resolvedConnectionString);
+});
 builder.Services.AddScoped<PayrollService>();
 builder.Services.AddScoped<INSSService>();
 builder.Services.AddScoped<PayrollCalculationService>();
@@ -141,7 +189,8 @@ app.UseAuthorization();
 app.MapControllers();
 
 var pointsToLocalDb = resolvedConnectionString.Contains("localhost", StringComparison.OrdinalIgnoreCase) ||
-                      resolvedConnectionString.Contains("127.0.0.1", StringComparison.OrdinalIgnoreCase);
+                      resolvedConnectionString.Contains("127.0.0.1", StringComparison.OrdinalIgnoreCase) ||
+                      IsSqliteConnectionString(resolvedConnectionString);
 var hasConnectionString = !string.IsNullOrWhiteSpace(resolvedConnectionString);
 
 var runDbBootstrap = builder.Configuration.GetValue<bool?>("Database:RunMigrationsOnStartup")

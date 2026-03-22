@@ -81,14 +81,23 @@ public class AuthController : ControllerBase
 
     private string GenerateJwtToken(User user)
     {
+        var jwtKey = _config["Jwt:Key"];
+        var jwtIssuer = _config["Jwt:Issuer"];
+        var jwtAudience = _config["Jwt:Audience"];
+
+        if (string.IsNullOrWhiteSpace(jwtKey) || string.IsNullOrWhiteSpace(jwtIssuer) || string.IsNullOrWhiteSpace(jwtAudience))
+        {
+            throw new InvalidOperationException("JWT configuration is missing. Ensure Jwt:Key, Jwt:Issuer and Jwt:Audience are set.");
+        }
+
         var claims = new[]
         {
-            new Claim(ClaimTypes.Name, user.Username),
-            new Claim(ClaimTypes.Role, user.Role)
+            new Claim(ClaimTypes.Name, string.IsNullOrWhiteSpace(user.Username) ? "unknown" : user.Username),
+            new Claim(ClaimTypes.Role, string.IsNullOrWhiteSpace(user.Role) ? "Colaborador" : user.Role)
         };
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-        var token = new JwtSecurityToken(_config["Jwt:Issuer"], _config["Jwt:Audience"], claims, expires: DateTime.Now.AddHours(1), signingCredentials: creds);
+        var token = new JwtSecurityToken(jwtIssuer, jwtAudience, claims, expires: DateTime.Now.AddHours(1), signingCredentials: creds);
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 }
